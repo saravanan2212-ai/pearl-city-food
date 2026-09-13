@@ -3,120 +3,37 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
+const crypto = require("crypto");
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+app.use(cors());
+app.use(express.json({ limit: "2mb" }));
 
-// =====================================================
+// ===============================
 // SUPABASE
-// =====================================================
-
-if (!process.env.SUPABASE_URL) {
-    console.error("❌ SUPABASE_URL is missing in .env");
-    process.exit(1);
-}
-
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("❌ SUPABASE_SERVICE_ROLE_KEY is missing in .env");
-    process.exit(1);
-}
+// ===============================
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// =====================================================
-// MIDDLEWARE
-// =====================================================
-
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    })
-);
-
-app.use(express.json({ limit: "1mb" }));
-
-// =====================================================
+// ===============================
 // MULTER
-// Screenshot is kept in memory and uploaded to Supabase
-// =====================================================
+// ===============================
 
 const upload = multer({
     storage: multer.memoryStorage(),
-
     limits: {
-        fileSize: 5 * 1024 * 1024,
-    },
-
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-        ];
-
-        if (!allowedTypes.includes(file.mimetype)) {
-            return cb(
-                new Error("Only JPG, PNG and WEBP images are allowed")
-            );
-        }
-
-        cb(null, true);
+        fileSize: 5 * 1024 * 1024, // 5MB
     },
 });
 
-// =====================================================
-// HELPERS
-// =====================================================
-
-function generateBookingId() {
-    const random = crypto
-        .randomBytes(4)
-        .toString("hex")
-        .toUpperCase();
-
-    return `PCS-${Date.now().toString().slice(-6)}-${random}`;
-}
-
-function isValidPhone(phone) {
-    return /^[6-9]\d{9}$/.test(String(phone || ""));
-}
-
-function isValidDate(date) {
-    if (!date) return false;
-
-    const parsed = new Date(date);
-
-    return !Number.isNaN(parsed.getTime());
-}
-
-function parseItems(items) {
-    try {
-        if (typeof items === "string") {
-            return JSON.parse(items);
-        }
-
-        return items;
-    } catch (error) {
-        return null;
-    }
-}
-
-function sanitizeFileName(name) {
-    return String(name || "payment")
-        .replace(/[^a-zA-Z0-9._-]/g, "_")
-        .substring(0, 100);
-}
-
-// =====================================================
+// ===============================
 // HEALTH CHECK
-// =====================================================
+// ===============================
 
 app.get("/", (req, res) => {
     res.json({
@@ -127,10 +44,9 @@ app.get("/", (req, res) => {
     });
 });
 
-// =====================================================
-// CREATE BOOKING
-// POST /api/bookings
-// =====================================================
+// ===============================
+// CREATE BOOKING + SCREENSHOT
+// ===============================
 
 app.post(
     "/api/bookings",
@@ -147,71 +63,33 @@ app.post(
                 slot,
                 notes,
                 total,
+                items,
             } = req.body;
 
-            const items = parseItems(req.body.items);
-
-            // -------------------------------------------------
-            // VALIDATION
-            // -------------------------------------------------
-
-            if (!name || !String(name).trim()) {
+            // Required fields
+            if (
+                !name ||
+                !phone ||
+                !department ||
+                !year ||
+                !date ||
+                !slot
+            ) {
                 return res.status(400).json({
                     success: false,
-                    message: "Name is required",
+                    message: "Please fill all required fields",
                 });
             }
 
-            if (!phone || !isValidPhone(phone)) {
+            // Phone validation
+            if (!/^[6-9]\d{9}$/.test(String(phone))) {
                 return res.status(400).json({
                     success: false,
-                    message:
-                        "Please enter a valid Indian 10-digit mobile number",
+                    message: "Invalid Indian mobile number",
                 });
             }
 
-            if (!department || !String(department).trim()) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Department is required",
-                });
-            }
-
-            if (!year || !String(year).trim()) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Year is required",
-                });
-            }
-
-            if (!date || !isValidDate(date)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Valid booking date is required",
-                });
-            }
-
-            if (!slot || !String(slot).trim()) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Pickup slot is required",
-                });
-            }
-
-            if (!items || !Array.isArray(items) || items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "At least one food item is required",
-                });
-            }
-
-            if (!total || Number(total) <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid total amount",
-                });
-            }
-
+            // Screenshot required
             if (!req.file) {
                 return res.status(400).json({
                     success: false,
@@ -219,177 +97,154 @@ app.post(
                 });
             }
 
-            // -------------------------------------------------
-            // GENERATE BOOKING ID
-            // -------------------------------------------------
+            const bookingId =
+                "PCS-" +
+                Date.now().toString().slice(-6) +
+                "-" +
+                crypto.randomBytes(3).toString("hex").toUpperCase();
 
-            const bookingId = generateBookingId();
-
-            // -------------------------------------------------
-            // UPLOAD PAYMENT SCREENSHOT TO SUPABASE STORAGE
-            // -------------------------------------------------
-
-            const extensionMap = {
-                "image/jpeg": "jpg",
-                "image/png": "png",
-                "image/webp": "webp",
-            };
+            // ===============================
+            // UPLOAD SCREENSHOT
+            // ===============================
 
             const extension =
-                extensionMap[req.file.mimetype] || "jpg";
+                req.file.originalname.split(".").pop().toLowerCase();
 
-            const fileName = `${bookingId}-${Date.now()}.${extension}`;
+            const fileName =
+                `${bookingId}-${Date.now()}.${extension}`;
 
-            const storagePath = `payments/${fileName}`;
+            const filePath = `bookings/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
                 .from("payment-screenshots")
-                .upload(storagePath, req.file.buffer, {
+                .upload(filePath, req.file.buffer, {
                     contentType: req.file.mimetype,
                     upsert: false,
                 });
 
             if (uploadError) {
                 console.error(
-                    "Supabase storage upload error:",
+                    "SCREENSHOT UPLOAD ERROR:",
                     uploadError
                 );
 
                 return res.status(500).json({
                     success: false,
                     message: "Failed to upload payment screenshot",
+                    error: uploadError.message,
                 });
             }
 
-            // -------------------------------------------------
+            // ===============================
             // CREATE SIGNED URL
-            // Bucket is PRIVATE
-            // -------------------------------------------------
+            // ===============================
 
-            const { data: signedUrlData, error: signedUrlError } =
+            const { data: signedData, error: signedError } =
                 await supabase.storage
                     .from("payment-screenshots")
-                    .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
+                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
 
-            if (signedUrlError) {
+            if (signedError) {
                 console.error(
-                    "Signed URL error:",
-                    signedUrlError
+                    "SIGNED URL ERROR:",
+                    signedError
                 );
 
                 return res.status(500).json({
                     success: false,
                     message: "Failed to create screenshot URL",
+                    error: signedError.message,
                 });
             }
 
-            // -------------------------------------------------
-            // INSERT BOOKING INTO SUPABASE DATABASE
-            // -------------------------------------------------
+            // ===============================
+            // BOOKING DATA
+            // ===============================
+
+            let parsedItems = [];
+
+            try {
+                parsedItems =
+                    typeof items === "string"
+                        ? JSON.parse(items)
+                        : items || [];
+            } catch {
+                parsedItems = [];
+            }
 
             const booking = {
                 booking_id: bookingId,
-
                 name: String(name).trim(),
-
                 phone: String(phone).trim(),
-
                 department: String(department).trim(),
-
                 year: String(year).trim(),
-
                 email: email
                     ? String(email).trim()
                     : null,
-
-                date: date,
-
+                date,
                 slot: String(slot).trim(),
-
                 notes: notes
                     ? String(notes).trim()
                     : null,
+                total: Number(total) || 0,
+                items: parsedItems,
 
-                total: Number(total),
+                // Screenshot information
+                screenshot: signedData.signedUrl,
 
-                items: items,
-
-                screenshot: storagePath,
-
-                payment_status: "Pending Verification",
-
-                booking_status: "Pending",
-
+                payment_status: "Pending",
+                booking_status: "New",
                 created_at: new Date().toISOString(),
             };
 
-            const { data, error: insertError } = await supabase
+            // ===============================
+            // SAVE TO SUPABASE
+            // ===============================
+
+            const { data, error } = await supabase
                 .from("bookings")
                 .insert([booking])
                 .select()
                 .single();
 
-            if (insertError) {
+            if (error) {
                 console.error(
-                    "Supabase database error:",
-                    insertError
+                    "SUPABASE INSERT ERROR:",
+                    error
                 );
-
-                // If DB insert fails, try removing uploaded file
-                await supabase.storage
-                    .from("payment-screenshots")
-                    .remove([storagePath]);
 
                 return res.status(500).json({
                     success: false,
                     message: "Failed to save booking",
+                    error: error.message,
                 });
             }
 
-            // -------------------------------------------------
-            // SUCCESS
-            // -------------------------------------------------
-
             return res.status(201).json({
                 success: true,
-
-                message:
-                    "Booking submitted successfully",
-
-                bookingId: bookingId,
-
+                message: "Order received successfully 🎉",
+                bookingId,
                 booking: data,
-
-                screenshotUrl:
-                    signedUrlData?.signedUrl || null,
             });
         } catch (error) {
-            console.error(
-                "Create booking error:",
-                error
-            );
+            console.error("BOOKING ERROR:", error);
 
             return res.status(500).json({
                 success: false,
                 message:
-                    error.message ||
-                    "Something went wrong while creating booking",
+                    error.message || "Booking failed",
             });
         }
     }
 );
 
-// =====================================================
-// GET ALL BOOKINGS
-// GET /api/bookings
-// =====================================================
+// ===============================
+// GET ALL BOOKINGS - ADMIN
+// ===============================
 
 app.get("/api/bookings", async (req, res) => {
     try {
-        const {
-            data,
-            error,
-        } = await supabase
+        const { data, error } = await supabase
             .from("bookings")
             .select("*")
             .order("created_at", {
@@ -397,356 +252,94 @@ app.get("/api/bookings", async (req, res) => {
             });
 
         if (error) {
-            console.error(
-                "Fetch bookings error:",
-                error
-            );
+            console.error("FETCH ERROR:", error);
 
             return res.status(500).json({
                 success: false,
                 message: "Failed to fetch bookings",
+                error: error.message,
             });
         }
 
-        // -------------------------------------------------
-        // CREATE FRESH SIGNED URL FOR EACH SCREENSHOT
-        // -------------------------------------------------
-
-        const bookingsWithScreenshots =
-            await Promise.all(
-                (data || []).map(async (booking) => {
-                    let screenshotUrl = null;
-
-                    if (booking.screenshot) {
-                        const {
-                            data: signedData,
-                        } = await supabase.storage
-                            .from("payment-screenshots")
-                            .createSignedUrl(
-                                booking.screenshot,
-                                60 * 60
-                            );
-
-                        screenshotUrl =
-                            signedData?.signedUrl || null;
-                    }
-
-                    return {
-                        ...booking,
-                        screenshotUrl,
-                    };
-                })
-            );
-
-        return res.json({
+        res.json({
             success: true,
-            bookings: bookingsWithScreenshots,
+            bookings: data || [],
         });
     } catch (error) {
-        console.error(
-            "Get bookings error:",
-            error
-        );
+        console.error(error);
 
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
             message: "Failed to fetch bookings",
         });
     }
 });
 
-// =====================================================
-// GET SINGLE BOOKING
-// GET /api/bookings/:bookingId
-// =====================================================
+// ===============================
+// UPDATE ORDER STATUS
+// ===============================
 
-app.get(
-    "/api/bookings/:bookingId",
-    async (req, res) => {
-        try {
-            const { bookingId } = req.params;
+app.put("/api/bookings/:bookingId", async (req, res) => {
+    try {
+        const { bookingId } = req.params;
 
-            const {
-                data,
-                error,
-            } = await supabase
-                .from("bookings")
-                .select("*")
-                .eq("booking_id", bookingId)
-                .single();
+        const {
+            bookingStatus,
+            paymentStatus,
+        } = req.body;
 
-            if (error || !data) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Booking not found",
-                });
-            }
+        const updateData = {};
 
-            let screenshotUrl = null;
+        if (bookingStatus) {
+            updateData.booking_status =
+                bookingStatus;
+        }
 
-            if (data.screenshot) {
-                const {
-                    data: signedData,
-                } = await supabase.storage
-                    .from("payment-screenshots")
-                    .createSignedUrl(
-                        data.screenshot,
-                        60 * 60
-                    );
+        if (paymentStatus) {
+            updateData.payment_status =
+                paymentStatus;
+        }
 
-                screenshotUrl =
-                    signedData?.signedUrl || null;
-            }
+        const { data, error } = await supabase
+            .from("bookings")
+            .update(updateData)
+            .eq("booking_id", bookingId)
+            .select()
+            .single();
 
-            return res.json({
-                success: true,
-
-                booking: {
-                    ...data,
-                    screenshotUrl,
-                },
-            });
-        } catch (error) {
-            console.error(
-                "Get single booking error:",
-                error
-            );
+        if (error) {
+            console.error("UPDATE ERROR:", error);
 
             return res.status(500).json({
                 success: false,
-                message: "Failed to fetch booking",
+                message: "Failed to update order",
             });
         }
-    }
-);
 
-// =====================================================
-// UPDATE BOOKING STATUS
-// PUT /api/bookings/:bookingId
-// =====================================================
-
-app.put(
-    "/api/bookings/:bookingId",
-    async (req, res) => {
-        try {
-            const { bookingId } = req.params;
-
-            const {
-                paymentStatus,
-                bookingStatus,
-            } = req.body;
-
-            const updateData = {};
-
-            if (paymentStatus !== undefined) {
-                updateData.payment_status =
-                    String(paymentStatus);
-            }
-
-            if (bookingStatus !== undefined) {
-                updateData.booking_status =
-                    String(bookingStatus);
-            }
-
-            if (
-                Object.keys(updateData).length === 0
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message: "No status changes provided",
-                });
-            }
-
-            const {
-                data,
-                error,
-            } = await supabase
-                .from("bookings")
-                .update(updateData)
-                .eq("booking_id", bookingId)
-                .select()
-                .single();
-
-            if (error) {
-                console.error(
-                    "Update booking error:",
-                    error
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Failed to update booking",
-                });
-            }
-
-            return res.json({
-                success: true,
-
-                message:
-                    "Booking updated successfully",
-
-                booking: data,
-            });
-        } catch (error) {
-            console.error(
-                "Update status error:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Failed to update booking",
-            });
-        }
-    }
-);
-
-// =====================================================
-// DELETE BOOKING
-// DELETE /api/bookings/:bookingId
-// =====================================================
-
-app.delete(
-    "/api/bookings/:bookingId",
-    async (req, res) => {
-        try {
-            const { bookingId } = req.params;
-
-            // First find booking
-            const {
-                data: booking,
-                error: findError,
-            } = await supabase
-                .from("bookings")
-                .select("screenshot")
-                .eq("booking_id", bookingId)
-                .single();
-
-            if (findError || !booking) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Booking not found",
-                });
-            }
-
-            // Delete database record
-            const {
-                error: deleteError,
-            } = await supabase
-                .from("bookings")
-                .delete()
-                .eq("booking_id", bookingId);
-
-            if (deleteError) {
-                console.error(
-                    "Delete booking error:",
-                    deleteError
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Failed to delete booking",
-                });
-            }
-
-            // Delete screenshot from storage
-            if (booking.screenshot) {
-                const {
-                    error: storageDeleteError,
-                } = await supabase.storage
-                    .from("payment-screenshots")
-                    .remove([booking.screenshot]);
-
-                if (storageDeleteError) {
-                    console.error(
-                        "Storage delete warning:",
-                        storageDeleteError
-                    );
-                }
-            }
-
-            return res.json({
-                success: true,
-                message:
-                    "Booking deleted successfully",
-            });
-        } catch (error) {
-            console.error(
-                "Delete booking error:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Failed to delete booking",
-            });
-        }
-    }
-);
-
-// =====================================================
-// 404
-// =====================================================
-
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: "API route not found",
-    });
-});
-
-// =====================================================
-// ERROR HANDLER
-// =====================================================
-
-app.use((error, req, res, next) => {
-    console.error(
-        "Server error:",
-        error
-    );
-
-    if (error.code === "LIMIT_FILE_SIZE") {
-        return res.status(400).json({
+        res.json({
+            success: true,
+            booking: data,
+        });
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message:
-                "Payment screenshot must be 5MB or smaller",
+            message: "Update failed",
         });
     }
-
-    return res.status(500).json({
-        success: false,
-        message:
-            error.message ||
-            "Internal server error",
-    });
 });
 
-// =====================================================
-// LOCAL SERVER
-// =====================================================
+// ===============================
+// START LOCAL SERVER
+// ===============================
 
 if (require.main === module) {
-    app.listen(
-        PORT,
-        "0.0.0.0",
-        () => {
-            console.log(
-                `🚀 Pearl City Food backend running on port ${PORT}`
-            );
+    const PORT = process.env.PORT || 5000;
 
-            console.log(
-                `📦 Supabase database connected`
-            );
-
-            console.log(
-                `🖼️ Supabase storage connected`
-            );
-        }
-    );
+    app.listen(PORT, () => {
+        console.log(
+            `🚀 Server running on port ${PORT}`
+        );
+    });
 }
-
-// =====================================================
-// EXPORT FOR VERCEL
-// =====================================================
 
 module.exports = app;
