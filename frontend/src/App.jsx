@@ -258,7 +258,7 @@ function App() {
       data.append("screenshot", paymentScreenshot);
 
       const response = await fetch(
-        "https://pearl-city-food-wasf.vercel.app",
+        "https://pearl-city-food-wasf.vercel.app/api/bookings",
         {
           method: "POST",
           body: data,
