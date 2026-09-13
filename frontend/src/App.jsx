@@ -258,7 +258,7 @@ function App() {
       data.append("screenshot", paymentScreenshot);
 
       const response = await fetch(
-        "http://localhost:5000/api/bookings",
+        "https://pearl-city-food-wasf.vercel.app",
         {
           method: "POST",
           body: data,
@@ -276,7 +276,7 @@ function App() {
     } catch (error) {
       console.error("Booking Error:", error);
       alert(
-        "Booking failed. Please make sure the backend server is running on http://localhost:5000"
+        "Booking failed. Please make sure the backend server is running on https://pearl-city-food-wasf.vercel.app"
       );
     }
   };
