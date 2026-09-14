@@ -7,8 +7,6 @@ import {
   ArrowLeft,
   CheckCircle,
   Upload,
-  MessageCircle,
-  CalendarDays,
   Clock,
   CreditCard,
   X,
@@ -23,10 +21,53 @@ import {
 } from "lucide-react";
 import "./App.css";
 
-const WHATSAPP_NUMBER = "91740166121";
 
-const ADMIN_USERNAME = "pearl city";
-const ADMIN_PASSWORD = "kec";
+const specialOfferStyles = `
+.special-offer-card {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.12);
+  transform: translateY(-2px);
+}
+
+.special-offer-ribbon {
+  position: absolute;
+  top: 12px;
+  right: -38px;
+  z-index: 5;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  padding: 7px 42px;
+  transform: rotate(45deg);
+  box-shadow: 0 5px 12px rgba(0,0,0,0.18);
+}
+
+.special-offer-tag {
+  background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
+  color: #fff !important;
+}
+
+.special-offer-subtitle {
+  font-weight: 800 !important;
+  color: #d97706 !important;
+}
+
+.special-offer-price {
+  font-size: 1.35rem !important;
+  color: #ea580c !important;
+}
+`;
+
+function SpecialOfferStyles() {
+  return <style>{specialOfferStyles}</style>;
+}
+
+const ADMIN_USERNAME = "PEARLCITY";
+const ADMIN_PASSWORD = "ECE";
 
 const MENU = [
   {
@@ -67,17 +108,12 @@ const MENU = [
 ];
 
 const SLOTS = [
-  "10:00 AM",
-  "10:30 AM",
-  "11:00 AM",
-  "11:30 AM",
   "12:00 PM",
   "12:30 PM",
   "1:00 PM",
   "1:30 PM",
   "2:00 PM",
   "2:30 PM",
-  "3:00 PM",
 ];
 
 function Input({
@@ -106,6 +142,7 @@ function Input({
 }
 
 function App() {
+  <SpecialOfferStyles />;
   const [page, setPage] = useState("home");
   const [cart, setCart] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -116,7 +153,6 @@ function App() {
     department: "",
     year: "",
     email: "",
-    date: "",
     slot: "",
     notes: "",
   });
@@ -148,8 +184,6 @@ function App() {
     [cart]
   );
 
-  const today = new Date().toISOString().split("T")[0];
-
   useEffect(() => {
     const savedOrders = localStorage.getItem(
       "pearlCityOrders"
@@ -157,7 +191,17 @@ function App() {
 
     if (savedOrders) {
       try {
-        setOrders(JSON.parse(savedOrders));
+        const parsedOrders = JSON.parse(savedOrders);
+        setOrders(
+          parsedOrders.map((order) => {
+            if (!order.customer) return order;
+            const { date, ...customerWithoutDate } = order.customer;
+            return {
+              ...order,
+              customer: customerWithoutDate,
+            };
+          })
+        );
       } catch {
         setOrders([]);
       }
@@ -299,11 +343,6 @@ function App() {
       return false;
     }
 
-    if (!formData.date) {
-      alert("Please select pickup date.");
-      return false;
-    }
-
     if (!formData.slot) {
       alert("Please select pickup slot.");
       return false;
@@ -340,47 +379,6 @@ function App() {
     setOrders((prev) => [order, ...prev]);
     setBookingId(id);
     setPage("success");
-  };
-
-  const sendWhatsAppOrder = () => {
-    const itemText = cart
-      .map(
-        (item) =>
-          `• ${item.name} - ${item.subtitle} × ${item.quantity} = ₹${item.price * item.quantity
-          }`
-      )
-      .join("\n");
-
-    const message = `🍽️ *PEARL CITY PAROTTA STALL*
-
-🎫 Booking ID: ${bookingId}
-
-👤 Name: ${formData.name}
-📱 Phone: ${formData.phone}
-🏫 Department: ${formData.department}
-🎓 Year: ${formData.year}
-
-📅 Date: ${formData.date}
-⏰ Slot: ${formData.slot}
-
-🍴 *ORDER*
-${itemText}
-
-💰 *TOTAL: ₹${totalPrice}*
-
-💳 Payment: UPI
-📸 Payment Screenshot: Uploaded
-
-${formData.notes ? `📝 Notes: ${formData.notes}` : ""}
-
-Please verify my payment and confirm my order.`;
-
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-        message
-      )}`,
-      "_blank"
-    );
   };
 
   const adminLogin = (e) => {
@@ -451,7 +449,6 @@ Please verify my payment and confirm my order.`;
       department: "",
       year: "",
       email: "",
-      date: "",
       slot: "",
       notes: "",
     });
@@ -652,7 +649,7 @@ Please verify my payment and confirm my order.`;
                     <tr>
                       <th>Booking</th>
                       <th>Customer</th>
-                      <th>Date / Slot</th>
+                      <th>Pickup Slot</th>
                       <th>Total</th>
                       <th>Payment</th>
                       <th>Order</th>
@@ -689,12 +686,8 @@ Please verify my payment and confirm my order.`;
                         <td>
                           <div className="customer-cell">
                             <strong>
-                              {order.customer.date}
-                            </strong>
-
-                            <span>
                               {order.customer.slot}
-                            </span>
+                            </strong>
                           </div>
                         </td>
 
@@ -800,13 +793,6 @@ Please verify my payment and confirm my order.`;
                   <span>Year</span>
                   <strong>
                     {selectedOrder.customer.year}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Date</span>
-                  <strong>
-                    {selectedOrder.customer.date}
                   </strong>
                 </div>
 
@@ -1068,8 +1054,8 @@ Please verify my payment and confirm my order.`;
                 </div>
 
                 <div>
-                  <span>📱</span>
-                  <p>WhatsApp Order</p>
+                  <span>📸</span>
+                  <p>Payment Proof</p>
                 </div>
               </div>
             </div>
@@ -1402,30 +1388,6 @@ Please verify my payment and confirm my order.`;
 
               <div className="input-group">
                 <label>
-                  Pickup Date <span>*</span>
-                </label>
-
-                <div className="input-icon">
-                  <CalendarDays size={18} />
-
-                  <input
-                    type="date"
-                    min={today}
-                    value={
-                      formData.date
-                    }
-                    onChange={(e) =>
-                      updateForm(
-                        "date",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label>
                   Pickup Slot <span>*</span>
                 </label>
 
@@ -1668,9 +1630,8 @@ Please verify my payment and confirm my order.`;
             </h2>
 
             <p>
-              Your order has been saved.
-              Send the details to the
-              stall through WhatsApp.
+              Your order has been saved successfully.
+              Keep your booking ID for reference.
             </p>
 
             <div className="booking-id">
@@ -1684,11 +1645,6 @@ Please verify my payment and confirm my order.`;
             </div>
 
             <div className="success-details">
-              <div>
-                <CalendarDays size={17} />
-                {formData.date}
-              </div>
-
               <div>
                 <Clock size={17} />
                 {formData.slot}
@@ -1706,22 +1662,6 @@ Please verify my payment and confirm my order.`;
             </div>
 
             <button
-              className="whatsapp-button"
-              onClick={
-                sendWhatsAppOrder
-              }
-            >
-              <MessageCircle size={21} />
-              Send Order on WhatsApp
-            </button>
-
-            <p className="whatsapp-note">
-              Please send the WhatsApp
-              message so the stall team
-              receives the order details.
-            </p>
-
-            <button
               className="text-button"
               onClick={
                 resetOrder
@@ -1737,23 +1677,31 @@ Please verify my payment and confirm my order.`;
 }
 
 function FoodCard({ item, onAdd }) {
+  const isSpecialOffer = item.id === 2;
+
   return (
-    <div className="food-card">
+    <div className={isSpecialOffer ? "food-card special-offer-card" : "food-card"}>
+      {isSpecialOffer && (
+        <div className="special-offer-ribbon">🔥 SPECIAL OFFER</div>
+      )}
+
       <div className="food-image">
         {item.emoji}
       </div>
 
       <div className="food-content">
-        <span className="food-tag">
-          POPULAR
+        <span className={isSpecialOffer ? "food-tag special-offer-tag" : "food-tag"}>
+          {isSpecialOffer ? "BEST VALUE" : "POPULAR"}
         </span>
 
         <h3>{item.name}</h3>
 
-        <p>{item.subtitle}</p>
+        <p className={isSpecialOffer ? "special-offer-subtitle" : ""}>
+          {isSpecialOffer ? "3 Pieces • Only ₹50" : item.subtitle}
+        </p>
 
         <div className="food-bottom">
-          <strong>
+          <strong className={isSpecialOffer ? "special-offer-price" : ""}>
             ₹{item.price}
           </strong>
 
