@@ -1,131 +1,210 @@
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ShoppingCart,
   Plus,
   Minus,
-  X,
-  ChefHat,
+  Trash2,
+  ArrowLeft,
+  CheckCircle,
+  Upload,
+  MessageCircle,
+  CalendarDays,
   Clock,
   CreditCard,
-  CheckCircle,
-  Menu,
-  ArrowLeft,
-  User,
-  Phone,
-  CalendarDays,
-  GraduationCap,
-  Building2,
-  FileText,
-  Upload,
-  Smartphone,
-  Image as ImageIcon,
+  X,
+  Menu as MenuIcon,
+  Lock,
+  LogOut,
+  Eye,
+  Check,
+  XCircle,
+  ClipboardList,
+  IndianRupee,
 } from "lucide-react";
-
 import "./App.css";
 
-const menuItems = [
+const WHATSAPP_NUMBER = "91740166121";
+
+const ADMIN_USERNAME = "pearl city";
+const ADMIN_PASSWORD = "kec";
+
+const MENU = [
   {
     id: 1,
     name: "Thoothukudi Poricha Parotta",
-    variant: "(1)",
+    subtitle: "1 Piece",
     price: 20,
-    description:
-      "Crispy and delicious Thoothukudi style poricha parotta.",
-    emoji: "🥞",
+    emoji: "🫓",
   },
   {
     id: 2,
     name: "Thoothukudi Poricha Parotta",
-    variant: "(3)",
+    subtitle: "3 Pieces",
     price: 50,
-    description:
-      "Three tasty poricha parottas — perfect for sharing.",
-    emoji: "🥞",
+    emoji: "🫓",
   },
   {
     id: 3,
     name: "Omlet",
-    variant: "",
+    subtitle: "Fresh Egg Omlet",
     price: 20,
-    description:
-      "Hot and fluffy street-style egg omlet.",
-    emoji: "🍳",
+    emoji: "🥚",
   },
   {
     id: 4,
     name: "Chicken Chukka",
-    variant: "",
+    subtitle: "Spicy & Delicious",
     price: 80,
-    description:
-      "Spicy, juicy and flavorful South Indian chicken chukka.",
     emoji: "🍗",
   },
   {
     id: 5,
     name: "Ice Cream with Gulab Jamun",
-    variant: "",
+    subtitle: "Sweet Combo",
     price: 50,
-    description:
-      "Hot gulab jamun served with cool creamy ice cream.",
     emoji: "🍨",
   },
 ];
 
-const pickupSlots = [
-  "10:00 AM - 10:30 AM",
-  "10:30 AM - 11:00 AM",
-  "11:00 AM - 11:30 AM",
-  "11:30 AM - 12:00 PM",
-  "12:00 PM - 12:30 PM",
-  "12:30 PM - 1:00 PM",
-  "1:00 PM - 1:30 PM",
-  "1:30 PM - 2:00 PM",
-  "2:00 PM - 2:30 PM",
-  "2:30 PM - 3:00 PM",
+const SLOTS = [
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
 ];
 
+function Input({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+}) {
+  return (
+    <div className="input-group">
+      <label>
+        {label} {required && <span>*</span>}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+    </div>
+  );
+}
+
 function App() {
+  const [page, setPage] = useState("home");
   const [cart, setCart] = useState([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
-  const [bookingId, setBookingId] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
+    phone: "",
     department: "",
     year: "",
-    phone: "",
     email: "",
     date: "",
     slot: "",
     notes: "",
   });
 
-  const [errors, setErrors] = useState({});
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [paymentPreview, setPaymentPreview] = useState("");
+  const [bookingId, setBookingId] = useState("");
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const totalPrice = useMemo(
+    () =>
+      cart.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      ),
+    [cart]
+  );
+
+  const totalItems = useMemo(
+    () =>
+      cart.reduce((sum, item) => sum + item.quantity, 0),
+    [cart]
+  );
+
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    const savedOrders = localStorage.getItem(
+      "pearlCityOrders"
+    );
+
+    if (savedOrders) {
+      try {
+        setOrders(JSON.parse(savedOrders));
+      } catch {
+        setOrders([]);
+      }
+    }
+
+    const loggedIn = sessionStorage.getItem(
+      "pearlCityAdmin"
+    );
+
+    if (loggedIn === "true") {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "pearlCityOrders",
+      JSON.stringify(orders)
+    );
+  }, [orders]);
+
+  const updateForm = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const addToCart = (item) => {
-    setCart((currentCart) => {
-      const existing = currentCart.find(
-        (cartItem) => cartItem.id === item.id
+    setCart((prev) => {
+      const existing = prev.find(
+        (x) => x.id === item.id
       );
 
       if (existing) {
-        return currentCart.map((cartItem) =>
-          cartItem.id === item.id
+        return prev.map((x) =>
+          x.id === item.id
             ? {
-              ...cartItem,
-              quantity: cartItem.quantity + 1,
+              ...x,
+              quantity: x.quantity + 1,
             }
-            : cartItem
+            : x
         );
       }
 
       return [
-        ...currentCart,
+        ...prev,
         {
           ...item,
           quantity: 1,
@@ -135,8 +214,8 @@ function App() {
   };
 
   const increaseQuantity = (id) => {
-    setCart((currentCart) =>
-      currentCart.map((item) =>
+    setCart((prev) =>
+      prev.map((item) =>
         item.id === id
           ? {
             ...item,
@@ -148,8 +227,8 @@ function App() {
   };
 
   const decreaseQuantity = (id) => {
-    setCart((currentCart) =>
-      currentCart
+    setCart((prev) =>
+      prev
         .map((item) =>
           item.id === id
             ? {
@@ -162,1602 +241,1574 @@ function App() {
     );
   };
 
-  const removeFromCart = (id) => {
-    setCart((currentCart) =>
-      currentCart.filter((item) => item.id !== id)
+  const removeItem = (id) => {
+    setCart((prev) =>
+      prev.filter((item) => item.id !== id)
     );
   };
 
-  const totalItems = cart.reduce(
-    (total, item) => total + item.quantity,
-    0
-  );
-
-  const totalPrice = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-
-  const today = new Date().toISOString().split("T")[0];
-
-  const scrollToSection = (id) => {
-    setMenuOpen(false);
-
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-    });
-  };
-
-  const openBooking = () => {
-    if (cart.length === 0) {
-      alert("Please add at least one food item.");
-      return;
-    }
-
-    setCartOpen(false);
-    setBookingOpen(true);
-  };
-
-  const closeBooking = () => {
-    setBookingOpen(false);
-    setPaymentOpen(false);
-    setBookingSuccess(false);
-    setErrors({});
-  };
-
-  const openPayment = () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    setBookingOpen(false);
-    setPaymentOpen(true);
-  };
-
-  const handleScreenshotChange = (e) => {
+  const handleScreenshot = (e) => {
     const file = e.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file.");
-      e.target.value = "";
+      alert("Please upload an image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("Payment screenshot must be below 5 MB.");
-      e.target.value = "";
+      alert("Screenshot must be below 5MB.");
       return;
     }
 
     setPaymentScreenshot(file);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setPaymentPreview(reader.result);
+    };
+
+    reader.readAsDataURL(file);
   };
 
-  const confirmBooking = async () => {
-    if (!paymentScreenshot) {
-      alert("Please upload your payment screenshot.");
-      return;
+  const validateBooking = () => {
+    if (cart.length === 0) {
+      alert("Please add food items first.");
+      return false;
     }
-
-    try {
-      const data = new FormData();
-
-      data.append("name", formData.name);
-      data.append("phone", formData.phone);
-      data.append("department", formData.department);
-      data.append("year", formData.year);
-      data.append("email", formData.email || "");
-      data.append("date", formData.date);
-      data.append("slot", formData.slot);
-      data.append("notes", formData.notes || "");
-      data.append("total", totalPrice.toString());
-      data.append("items", JSON.stringify(cart));
-      data.append("screenshot", paymentScreenshot);
-
-      const response = await fetch(
-        "https://pearl-city-food-wasf.vercel.app/api/bookings",
-        {
-          method: "POST",
-          body: data,
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Booking failed");
-      }
-
-      setBookingId(result.bookingId);
-      setBookingSuccess(true);
-    } catch (error) {
-      console.error("Booking Error:", error);
-      alert(
-        "Booking failed. Please make sure the backend server is running on https://pearl-city-food-wasf.vercel.app"
-      );
-    }
-  };
-
-  const backToBooking = () => {
-    setPaymentOpen(false);
-    setBookingOpen(true);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "phone") {
-      const onlyNumbers = value.replace(/\D/g, "");
-
-      if (onlyNumbers.length <= 10) {
-        setFormData({
-          ...formData,
-          phone: onlyNumbers,
-        });
-      }
-
-      return;
-    }
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: "",
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Please enter your name";
+      alert("Please enter your name.");
+      return false;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(formData.phone)) {
+      alert("Enter a valid 10-digit Indian mobile number.");
+      return false;
     }
 
     if (!formData.department.trim()) {
-      newErrors.department = "Please enter your department";
+      alert("Please enter your department.");
+      return false;
     }
 
     if (!formData.year) {
-      newErrors.year = "Please select your year";
-    }
-
-    if (!formData.phone) {
-      newErrors.phone = "Please enter your phone number";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-      newErrors.phone =
-        "Enter a valid 10-digit Indian mobile number";
+      alert("Please select your year.");
+      return false;
     }
 
     if (!formData.date) {
-      newErrors.date = "Please select pickup date";
+      alert("Please select pickup date.");
+      return false;
     }
 
     if (!formData.slot) {
-      newErrors.slot = "Please select a pickup slot";
+      alert("Please select pickup slot.");
+      return false;
     }
 
-    setErrors(newErrors);
+    if (!paymentPreview) {
+      alert("Please upload payment screenshot.");
+      return false;
+    }
 
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
-  const handleContinuePayment = (e) => {
+  const confirmBooking = () => {
+    if (!validateBooking()) return;
+
+    const id =
+      "PCS-" +
+      Date.now().toString().slice(-6);
+
+    const order = {
+      id,
+      customer: {
+        ...formData,
+      },
+      items: cart,
+      total: totalPrice,
+      screenshot: paymentPreview,
+      paymentStatus: "Pending",
+      orderStatus: "New",
+      createdAt: new Date().toISOString(),
+    };
+
+    setOrders((prev) => [order, ...prev]);
+    setBookingId(id);
+    setPage("success");
+  };
+
+  const sendWhatsAppOrder = () => {
+    const itemText = cart
+      .map(
+        (item) =>
+          `• ${item.name} - ${item.subtitle} × ${item.quantity} = ₹${item.price * item.quantity
+          }`
+      )
+      .join("\n");
+
+    const message = `🍽️ *PEARL CITY PAROTTA STALL*
+
+🎫 Booking ID: ${bookingId}
+
+👤 Name: ${formData.name}
+📱 Phone: ${formData.phone}
+🏫 Department: ${formData.department}
+🎓 Year: ${formData.year}
+
+📅 Date: ${formData.date}
+⏰ Slot: ${formData.slot}
+
+🍴 *ORDER*
+${itemText}
+
+💰 *TOTAL: ₹${totalPrice}*
+
+💳 Payment: UPI
+📸 Payment Screenshot: Uploaded
+
+${formData.notes ? `📝 Notes: ${formData.notes}` : ""}
+
+Please verify my payment and confirm my order.`;
+
+    window.open(
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+        message
+      )}`,
+      "_blank"
+    );
+  };
+
+  const adminLogin = (e) => {
     e.preventDefault();
-    openPayment();
+
+    if (
+      adminUsername === ADMIN_USERNAME &&
+      adminPassword === ADMIN_PASSWORD
+    ) {
+      setIsAdmin(true);
+      setAdminError("");
+
+      sessionStorage.setItem(
+        "pearlCityAdmin",
+        "true"
+      );
+
+      setAdminUsername("");
+      setAdminPassword("");
+
+      setPage("admin");
+    } else {
+      setAdminError(
+        "Invalid username or password."
+      );
+    }
   };
 
-  return (
-    <div className="app">
+  const adminLogout = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem(
+      "pearlCityAdmin"
+    );
+    setPage("home");
+  };
 
-      {/* NAVBAR */}
-      <header className="navbar">
-        <div className="nav-container">
+  const updateOrder = (id, changes) => {
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === id
+          ? {
+            ...order,
+            ...changes,
+          }
+          : order
+      )
+    );
 
-          <div className="logo">
-            <ChefHat size={30} />
+    setSelectedOrder((prev) =>
+      prev
+        ? {
+          ...prev,
+          ...changes,
+        }
+        : null
+    );
+  };
 
-            <div>
-              <span>PEARL CITY</span>
-              <small>PAROTTA STALL</small>
-            </div>
+  const resetOrder = () => {
+    setCart([]);
+    setPaymentScreenshot(null);
+    setPaymentPreview("");
+    setBookingId("");
+
+    setFormData({
+      name: "",
+      phone: "",
+      department: "",
+      year: "",
+      email: "",
+      date: "",
+      slot: "",
+      notes: "",
+    });
+
+    setPage("home");
+  };
+
+  const pendingOrders = orders.filter(
+    (o) => o.paymentStatus === "Pending"
+  );
+
+  const approvedOrders = orders.filter(
+    (o) => o.paymentStatus === "Approved"
+  );
+
+  const rejectedOrders = orders.filter(
+    (o) => o.paymentStatus === "Rejected"
+  );
+
+  /* ================= ADMIN LOGIN ================= */
+
+  if (page === "adminLogin") {
+    return (
+      <div className="admin-login-page">
+        <div className="admin-login-card">
+          <div className="admin-lock">
+            <Lock size={30} />
           </div>
 
-          <nav
-            className={
-              menuOpen
-                ? "nav-links active"
-                : "nav-links"
-            }
-          >
-            <button
-              onClick={() =>
-                scrollToSection("home")
-              }
-            >
-              Home
-            </button>
-
-            <button
-              onClick={() =>
-                scrollToSection("menu")
-              }
-            >
-              Menu
-            </button>
-
-            <button
-              onClick={() =>
-                scrollToSection("how-it-works")
-              }
-            >
-              How It Works
-            </button>
-          </nav>
-
-          <div className="nav-actions">
-
-            <button
-              className="cart-button"
-              onClick={() => setCartOpen(true)}
-              aria-label="Open cart"
-            >
-              <ShoppingCart size={21} />
-
-              {totalItems > 0 && (
-                <span className="cart-count">
-                  {totalItems}
-                </span>
-              )}
-            </button>
-
-            <button
-              className="mobile-menu"
-              onClick={() =>
-                setMenuOpen(!menuOpen)
-              }
-              aria-label="Open menu"
-            >
-              <Menu />
-            </button>
-
-          </div>
-
-        </div>
-      </header>
-
-
-      {/* HERO */}
-      <section className="hero" id="home">
-
-        <div className="hero-content">
-
-          <div className="event-badge">
-            🔥 KINGS ENGINEERING COLLEGE
-          </div>
-
-          <p className="present-text">
-            FOOD CARNIVAL • ECE DEPARTMENT
-          </p>
-
-          <h1>
-            PEARL CITY
-            <span>PAROTTA STALL</span>
-          </h1>
-
-          <p className="hero-tagline">
-            Good Food • Great Vibes
-          </p>
-
-          <p className="hero-description">
-            Hot. Spicy. Fresh.
-            <br />
-            Your favorite food, ready when you arrive.
-          </p>
-
-          <div className="hero-buttons">
-
-            <button
-              className="primary-button"
-              onClick={() =>
-                scrollToSection("menu")
-              }
-            >
-              <ShoppingCart size={20} />
-              Pre-Book Now
-            </button>
-
-            <button
-              className="secondary-button"
-              onClick={() =>
-                scrollToSection("menu")
-              }
-            >
-              View Menu
-            </button>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* SPECIAL OFFER */}
-      <section className="offer-section">
-
-        <div className="offer-card">
-
-          <span className="offer-icon">
-            👑
+          <span className="eyebrow">
+            STAFF ACCESS
           </span>
 
-          <div>
-            <p>SPECIAL OFFER</p>
-
-            <h2>
-              Thoothukudi Poricha Parotta
-            </h2>
-
-            <span>
-              1 for ₹20 • 3 for ₹50
-            </span>
-          </div>
-
-          <button
-            onClick={() =>
-              addToCart(menuItems[1])
-            }
-          >
-            Add Offer
-          </button>
-
-        </div>
-
-      </section>
-
-
-      {/* MENU */}
-      <section
-        className="menu-section"
-        id="menu"
-      >
-
-        <div className="section-heading">
-
-          <p className="section-label">
-            OUR SPECIALS
-          </p>
-
-          <h2>
-            Today's <span>Menu</span>
-          </h2>
+          <h1>Admin Login</h1>
 
           <p>
-            Pick your favorites and pre-book
-            before the crowd arrives!
+            Login to manage Pearl City food orders.
           </p>
 
-        </div>
+          <form onSubmit={adminLogin}>
+            <Input
+              label="Username"
+              value={adminUsername}
+              onChange={setAdminUsername}
+              placeholder="Enter username"
+            />
 
+            <Input
+              label="Password"
+              type="password"
+              value={adminPassword}
+              onChange={setAdminPassword}
+              placeholder="Enter password"
+            />
 
-        <div className="menu-grid">
-
-          {menuItems.map((item) => (
-
-            <div
-              className="food-card"
-              key={item.id}
-            >
-
-              <div className="food-image">
-
-                <span>
-                  {item.emoji}
-                </span>
-
-                {(item.id === 1 ||
-                  item.id === 2) && (
-                    <div className="popular-badge">
-                      ⭐ POPULAR
-                    </div>
-                  )}
-
+            {adminError && (
+              <div className="error-box">
+                {adminError}
               </div>
-
-
-              <div className="food-info">
-
-                <div className="food-title">
-
-                  <h3>
-                    {item.name}
-                  </h3>
-
-                  {item.variant && (
-                    <span>
-                      {item.variant}
-                    </span>
-                  )}
-
-                </div>
-
-                <p>
-                  {item.description}
-                </p>
-
-                <div className="food-bottom">
-
-                  <strong>
-                    ₹{item.price}
-                  </strong>
-
-                  <button
-                    className="add-button"
-                    onClick={() =>
-                      addToCart(item)
-                    }
-                  >
-                    <Plus size={18} />
-                    Add
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      </section>
-
-
-      {/* HOW IT WORKS */}
-      <section
-        className="how-section"
-        id="how-it-works"
-      >
-
-        <div className="section-heading">
-
-          <p className="section-label">
-            EASY PRE-BOOKING
-          </p>
-
-          <h2>
-            How It <span>Works</span>
-          </h2>
-
-        </div>
-
-        <div className="steps">
-
-          <div className="step">
-            <div className="step-icon">
-              <ShoppingCart />
-            </div>
-
-            <span>01</span>
-
-            <h3>
-              Choose Your Food
-            </h3>
-
-            <p>
-              Select your favorite items
-              from our menu.
-            </p>
-          </div>
-
-
-          <div className="step">
-            <div className="step-icon">
-              <Clock />
-            </div>
-
-            <span>02</span>
-
-            <h3>
-              Select Pickup Slot
-            </h3>
-
-            <p>
-              Choose a convenient time
-              to collect your order.
-            </p>
-          </div>
-
-
-          <div className="step">
-            <div className="step-icon">
-              <CreditCard />
-            </div>
-
-            <span>03</span>
-
-            <h3>
-              Pay Online
-            </h3>
-
-            <p>
-              Make a quick and secure
-              online payment.
-            </p>
-          </div>
-
-
-          <div className="step">
-            <div className="step-icon">
-              <CheckCircle />
-            </div>
-
-            <span>04</span>
-
-            <h3>
-              Collect Your Food
-            </h3>
-
-            <p>
-              Show your order ID and
-              enjoy your food!
-            </p>
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* CTA */}
-      <section className="cta-section">
-
-        <div>
-
-          <p>
-            Hungry already? 😋
-          </p>
-
-          <h2>
-            Don't Wait.
-            <br />
-            <span>
-              Pre-Book Now!
-            </span>
-          </h2>
-
-        </div>
-
-        <button
-          className="primary-button"
-          onClick={() =>
-            scrollToSection("menu")
-          }
-        >
-          Order Now
-          <ShoppingCart size={20} />
-        </button>
-
-      </section>
-
-
-      {/* FOOTER */}
-      <footer>
-
-        <div className="footer-logo">
-
-          <ChefHat />
-
-          <span>
-            PEARL CITY PAROTTA STALL
-          </span>
-
-        </div>
-
-        <p>
-          Kings Engineering College • Food Carnival
-        </p>
-
-        <p className="copyright">
-          © 2026 Pearl City Parotta Stall
-        </p>
-
-      </footer>
-
-
-      {/* CART */}
-      {cartOpen && (
-
-        <div
-          className="cart-overlay"
-          onClick={() =>
-            setCartOpen(false)
-          }
-        >
-
-          <div
-            className="cart-drawer"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          >
-
-            <div className="cart-header">
-
-              <div>
-                <h2>Your Cart</h2>
-
-                <p>
-                  {totalItems} item(s)
-                </p>
-              </div>
-
-              <button
-                onClick={() =>
-                  setCartOpen(false)
-                }
-                className="close-button"
-              >
-                <X />
-              </button>
-
-            </div>
-
-
-            {cart.length === 0 ? (
-
-              <div className="empty-cart">
-
-                <ShoppingCart size={55} />
-
-                <h3>
-                  Your cart is empty
-                </h3>
-
-                <p>
-                  Add some delicious food!
-                </p>
-
-                <button
-                  className="primary-button"
-                  onClick={() => {
-                    setCartOpen(false);
-                    scrollToSection("menu");
-                  }}
-                >
-                  Browse Menu
-                </button>
-
-              </div>
-
-            ) : (
-
-              <>
-                <div className="cart-items">
-
-                  {cart.map((item) => (
-
-                    <div
-                      className="cart-item"
-                      key={item.id}
-                    >
-
-                      <div className="cart-food-icon">
-                        {item.emoji}
-                      </div>
-
-                      <div className="cart-item-info">
-
-                        <h3>
-                          {item.name}
-                          {item.variant &&
-                            ` ${item.variant}`}
-                        </h3>
-
-                        <strong>
-                          ₹
-                          {item.price *
-                            item.quantity}
-                        </strong>
-
-                        <div className="quantity-controls">
-
-                          <button
-                            onClick={() =>
-                              decreaseQuantity(
-                                item.id
-                              )
-                            }
-                          >
-                            <Minus size={15} />
-                          </button>
-
-                          <span>
-                            {item.quantity}
-                          </span>
-
-                          <button
-                            onClick={() =>
-                              increaseQuantity(
-                                item.id
-                              )
-                            }
-                          >
-                            <Plus size={15} />
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                      <button
-                        className="remove-button"
-                        onClick={() =>
-                          removeFromCart(
-                            item.id
-                          )
-                        }
-                      >
-                        <X size={17} />
-                      </button>
-
-                    </div>
-
-                  ))}
-
-                </div>
-
-
-                <div className="cart-footer">
-
-                  <div className="total-row">
-
-                    <span>
-                      Subtotal
-                    </span>
-
-                    <strong>
-                      ₹{totalPrice}
-                    </strong>
-
-                  </div>
-
-                  <div className="total-row grand-total">
-
-                    <span>
-                      Total
-                    </span>
-
-                    <strong>
-                      ₹{totalPrice}
-                    </strong>
-
-                  </div>
-
-                  <button
-                    className="checkout-button"
-                    onClick={openBooking}
-                  >
-                    Proceed to Pre-Booking
-                  </button>
-
-                  <p className="secure-text">
-                    🔒 Secure checkout
-                  </p>
-
-                </div>
-
-              </>
-
             )}
 
+            <button
+              className="primary-button full"
+              type="submit"
+            >
+              <Lock size={18} />
+              Login to Dashboard
+            </button>
+          </form>
+
+          <button
+            className="text-button"
+            onClick={() => setPage("home")}
+          >
+            ← Back to Website
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ================= ADMIN DASHBOARD ================= */
+
+  if (page === "admin") {
+    if (!isAdmin) {
+      setPage("adminLogin");
+      return null;
+    }
+
+    return (
+      <div className="admin-page">
+        <header className="admin-navbar">
+          <div>
+            <span className="eyebrow">
+              PEARL CITY
+            </span>
+            <h1>Admin Dashboard</h1>
           </div>
 
-        </div>
+          <div className="admin-nav-actions">
+            <button
+              className="secondary-button"
+              onClick={() => setPage("home")}
+            >
+              View Website
+            </button>
 
-      )}
+            <button
+              className="logout-button"
+              onClick={adminLogout}
+            >
+              <LogOut size={17} />
+              Logout
+            </button>
+          </div>
+        </header>
 
+        <main className="admin-container">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <ClipboardList />
+              </div>
 
-      {/* PRE-BOOKING */}
-      {bookingOpen && (
+              <div>
+                <span>Total Orders</span>
+                <strong>{orders.length}</strong>
+              </div>
+            </div>
 
-        <div className="booking-page">
+            <div className="stat-card pending">
+              <div className="stat-icon">
+                <Clock />
+              </div>
 
-          <div className="booking-container">
+              <div>
+                <span>Pending</span>
+                <strong>
+                  {pendingOrders.length}
+                </strong>
+              </div>
+            </div>
 
-            {/* TOP BAR */}
+            <div className="stat-card approved">
+              <div className="stat-icon">
+                <Check />
+              </div>
 
-            <div className="booking-top">
+              <div>
+                <span>Approved</span>
+                <strong>
+                  {approvedOrders.length}
+                </strong>
+              </div>
+            </div>
 
-              <button
-                className="back-button"
-                onClick={closeBooking}
-              >
-                <ArrowLeft size={20} />
-                Back
-              </button>
+            <div className="stat-card rejected">
+              <div className="stat-icon">
+                <XCircle />
+              </div>
 
-              <div className="booking-title">
-                <ChefHat size={22} />
-                <span>
-                  PRE-BOOK YOUR FOOD
+              <div>
+                <span>Rejected</span>
+                <strong>
+                  {rejectedOrders.length}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-section">
+            <div className="admin-section-title">
+              <div>
+                <span className="eyebrow">
+                  ORDER MANAGEMENT
                 </span>
+
+                <h2>Customer Orders</h2>
               </div>
 
-              <div className="step-indicator">
-                1 / 2
+              <span className="order-count">
+                {orders.length} Orders
+              </span>
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="empty-state">
+                <ClipboardList size={50} />
+                <h3>No orders yet</h3>
+                <p>
+                  Customer bookings will appear here.
+                </p>
               </div>
-
-            </div>
-
-
-            {/* TITLE */}
-
-            <div className="booking-heading">
-
-              <p className="section-label">
-                ALMOST THERE 🔥
-              </p>
-
-              <h1>
-                Tell us about <span>you</span>
-              </h1>
-
-              <p>
-                Enter your details and choose
-                your preferred pickup time.
-              </p>
-
-            </div>
-
-
-            <div className="booking-layout">
-
-
-              {/* FORM */}
-
-              <form
-                className="booking-form"
-                onSubmit={handleContinuePayment}
-              >
-
-                {/* PERSONAL DETAILS */}
-
-                <div className="form-section">
-
-                  <div className="form-section-title">
-
-                    <User size={19} />
-
-                    <div>
-                      <h2>
-                        Personal Details
-                      </h2>
-
-                      <p>
-                        We need this to identify
-                        your order.
-                      </p>
-                    </div>
-
-                  </div>
-
-
-                  {/* NAME */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Full Name
-                      <span>*</span>
-                    </label>
-
-                    <div className="input-wrapper">
-
-                      <User size={18} />
-
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Enter your full name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        autoComplete="name"
-                      />
-
-                    </div>
-
-                    {errors.name && (
-                      <small className="error-text">
-                        {errors.name}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* PHONE */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Phone Number
-                      <span>*</span>
-                    </label>
-
-                    <div className="phone-wrapper">
-
-                      <div className="country-code">
-                        🇮🇳 +91
-                      </div>
-
-                      <div className="input-wrapper phone-input">
-
-                        <Phone size={18} />
-
-                        <input
-                          type="tel"
-                          name="phone"
-                          inputMode="numeric"
-                          maxLength="10"
-                          placeholder="10-digit mobile number"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          autoComplete="tel"
-                        />
-
-                      </div>
-
-                    </div>
-
-                    <small className="input-hint">
-                      Example: 9876543210
-                    </small>
-
-                    {errors.phone && (
-                      <small className="error-text">
-                        {errors.phone}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* DEPARTMENT */}
-
-                  <div className="form-group">
-
-                    <label>
-                      College / Department
-                      <span>*</span>
-                    </label>
-
-                    <div className="input-wrapper">
-
-                      <Building2 size={18} />
-
-                      <input
-                        type="text"
-                        name="department"
-                        placeholder="Example: ECE"
-                        value={
-                          formData.department
-                        }
-                        onChange={handleChange}
-                      />
-
-                    </div>
-
-                    {errors.department && (
-                      <small className="error-text">
-                        {errors.department}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* YEAR */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Year
-                      <span>*</span>
-                    </label>
-
-                    <div className="input-wrapper">
-
-                      <GraduationCap size={18} />
-
-                      <select
-                        name="year"
-                        value={formData.year}
-                        onChange={handleChange}
-                      >
-
-                        <option value="">
-                          Select your year
-                        </option>
-
-                        <option value="1st Year">
-                          1st Year
-                        </option>
-
-                        <option value="2nd Year">
-                          2nd Year
-                        </option>
-
-                        <option value="3rd Year">
-                          3rd Year
-                        </option>
-
-                        <option value="4th Year">
-                          4th Year
-                        </option>
-
-                        <option value="Faculty">
-                          Faculty
-                        </option>
-
-                        <option value="Staff">
-                          Staff
-                        </option>
-
-                      </select>
-
-                    </div>
-
-                    {errors.year && (
-                      <small className="error-text">
-                        {errors.year}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* EMAIL */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Email
-                      <small>
-                        Optional
-                      </small>
-                    </label>
-
-                    <div className="input-wrapper">
-
-                      <span className="email-icon">
-                        @
-                      </span>
-
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="yourname@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        autoComplete="email"
-                      />
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-
-                {/* PICKUP */}
-
-                <div className="form-section">
-
-                  <div className="form-section-title">
-
-                    <Clock size={19} />
-
-                    <div>
-                      <h2>
-                        Pickup Details
-                      </h2>
-
-                      <p>
-                        Choose when you want
-                        to collect your food.
-                      </p>
-                    </div>
-
-                  </div>
-
-
-                  {/* DATE */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Pickup Date
-                      <span>*</span>
-                    </label>
-
-                    <div className="input-wrapper">
-
-                      <CalendarDays size={18} />
-
-                      <input
-                        type="date"
-                        name="date"
-                        min={today}
-                        value={formData.date}
-                        onChange={handleChange}
-                      />
-
-                    </div>
-
-                    {errors.date && (
-                      <small className="error-text">
-                        {errors.date}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* SLOT */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Pickup Time Slot
-                      <span>*</span>
-                    </label>
-
-                    <div className="slot-grid">
-
-                      {pickupSlots.map(
-                        (slot) => (
-
-                          <button
-                            type="button"
-                            key={slot}
-                            className={
-                              formData.slot === slot
-                                ? "slot-button selected"
-                                : "slot-button"
+            ) : (
+              <div className="orders-table-wrapper">
+                <table className="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Booking</th>
+                      <th>Customer</th>
+                      <th>Date / Slot</th>
+                      <th>Total</th>
+                      <th>Payment</th>
+                      <th>Order</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id}>
+                        <td>
+                          <strong className="booking-code">
+                            {order.id}
+                          </strong>
+                        </td>
+
+                        <td>
+                          <div className="customer-cell">
+                            <strong>
+                              {order.customer.name}
+                            </strong>
+
+                            <span>
+                              {order.customer.phone}
+                            </span>
+
+                            <small>
+                              {order.customer.department} •{" "}
+                              {order.customer.year}
+                            </small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="customer-cell">
+                            <strong>
+                              {order.customer.date}
+                            </strong>
+
+                            <span>
+                              {order.customer.slot}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td>
+                          <strong>
+                            ₹{order.total}
+                          </strong>
+                        </td>
+
+                        <td>
+                          <StatusBadge
+                            status={
+                              order.paymentStatus
                             }
+                          />
+                        </td>
+
+                        <td>
+                          <StatusBadge
+                            status={
+                              order.orderStatus
+                            }
+                          />
+                        </td>
+
+                        <td>
+                          <button
+                            className="view-button"
                             onClick={() =>
-                              setFormData({
-                                ...formData,
-                                slot,
-                              })
+                              setSelectedOrder(order)
                             }
                           >
-                            <Clock size={15} />
-                            {slot}
+                            <Eye size={16} />
+                            View
                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </main>
 
-                        )
-                      )}
+        {selectedOrder && (
+          <div
+            className="modal-backdrop"
+            onClick={() =>
+              setSelectedOrder(null)
+            }
+          >
+            <div
+              className="order-modal"
+              onClick={(e) =>
+                e.stopPropagation()
+              }
+            >
+              <div className="modal-header">
+                <div>
+                  <span className="eyebrow">
+                    ORDER DETAILS
+                  </span>
 
-                    </div>
-
-                    {errors.slot && (
-                      <small className="error-text">
-                        {errors.slot}
-                      </small>
-                    )}
-
-                  </div>
-
-
-                  {/* NOTES */}
-
-                  <div className="form-group">
-
-                    <label>
-                      Order Notes
-                      <small>
-                        Optional
-                      </small>
-                    </label>
-
-                    <div className="input-wrapper textarea-wrapper">
-
-                      <FileText size={18} />
-
-                      <textarea
-                        name="notes"
-                        placeholder="Any special request?"
-                        value={formData.notes}
-                        onChange={handleChange}
-                        rows="3"
-                      />
-
-                    </div>
-
-                  </div>
-
+                  <h2>
+                    {selectedOrder.id}
+                  </h2>
                 </div>
-
-
-                {/* MOBILE TOTAL */}
-
-                <div className="mobile-order-total">
-
-                  <div>
-                    <span>
-                      Total Amount
-                    </span>
-
-                    <strong>
-                      ₹{totalPrice}
-                    </strong>
-                  </div>
-
-                  <small>
-                    🔒 Secure payment
-                  </small>
-
-                </div>
-
-
-                {/* CONTINUE */}
 
                 <button
-                  type="submit"
-                  className="payment-continue-button"
+                  className="modal-close"
+                  onClick={() =>
+                    setSelectedOrder(null)
+                  }
                 >
-                  Continue to Payment
-                  <CreditCard size={19} />
+                  <X />
                 </button>
+              </div>
 
-              </form>
-
-
-              {/* ORDER SUMMARY */}
-
-              <aside className="booking-summary">
-
-                <div className="summary-header">
-
-                  <div>
-                    <p>
-                      YOUR ORDER
-                    </p>
-
-                    <h2>
-                      Order Summary
-                    </h2>
-                  </div>
-
-                  <ShoppingCart
-                    size={25}
-                  />
-
+              <div className="order-detail-grid">
+                <div>
+                  <span>Customer</span>
+                  <strong>
+                    {selectedOrder.customer.name}
+                  </strong>
                 </div>
 
+                <div>
+                  <span>Phone</span>
+                  <strong>
+                    {selectedOrder.customer.phone}
+                  </strong>
+                </div>
 
-                <div className="summary-items">
+                <div>
+                  <span>Department</span>
+                  <strong>
+                    {selectedOrder.customer.department}
+                  </strong>
+                </div>
 
-                  {cart.map((item) => (
+                <div>
+                  <span>Year</span>
+                  <strong>
+                    {selectedOrder.customer.year}
+                  </strong>
+                </div>
 
+                <div>
+                  <span>Date</span>
+                  <strong>
+                    {selectedOrder.customer.date}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Pickup Slot</span>
+                  <strong>
+                    {selectedOrder.customer.slot}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="modal-block">
+                <h3>🍴 Food Items</h3>
+
+                {selectedOrder.items.map(
+                  (item) => (
                     <div
-                      className="summary-item"
+                      className="modal-item"
                       key={item.id}
                     >
-
-                      <div className="summary-food">
-
-                        <span>
-                          {item.emoji}
-                        </span>
-
-                        <div>
-
-                          <h3>
-                            {item.name}
-                          </h3>
-
-                          {item.variant && (
-                            <small>
-                              {item.variant}
-                            </small>
-                          )}
-
-                          <p>
-                            Qty: {item.quantity}
-                          </p>
-
-                        </div>
-
-                      </div>
+                      <span>
+                        {item.emoji}{" "}
+                        {item.name}
+                        <small>
+                          {" "}
+                          × {item.quantity}
+                        </small>
+                      </span>
 
                       <strong>
                         ₹
                         {item.price *
                           item.quantity}
                       </strong>
-
                     </div>
+                  )
+                )}
 
-                  ))}
-
+                <div className="modal-total">
+                  <span>Total</span>
+                  <strong>
+                    ₹{selectedOrder.total}
+                  </strong>
                 </div>
+              </div>
 
+              <div className="modal-block">
+                <h3>📸 Payment Screenshot</h3>
 
-                <div className="summary-total">
+                {selectedOrder.screenshot ? (
+                  <img
+                    className="payment-image"
+                    src={
+                      selectedOrder.screenshot
+                    }
+                    alt="Payment screenshot"
+                  />
+                ) : (
+                  <p className="muted">
+                    No screenshot.
+                  </p>
+                )}
+              </div>
 
-                  <div>
-                    <span>
-                      Items
-                    </span>
-
-                    <strong>
-                      {totalItems}
-                    </strong>
-                  </div>
-
-                  <div className="final-total">
-
-                    <span>
-                      Total
-                    </span>
-
-                    <strong>
-                      ₹{totalPrice}
-                    </strong>
-
-                  </div>
-
+              {selectedOrder.customer.notes && (
+                <div className="notes-box">
+                  <strong>📝 Notes</strong>
+                  <p>
+                    {selectedOrder.customer.notes}
+                  </p>
                 </div>
+              )}
 
+              <div className="admin-actions">
+                <button
+                  className="approve-button"
+                  onClick={() =>
+                    updateOrder(
+                      selectedOrder.id,
+                      {
+                        paymentStatus:
+                          "Approved",
+                        orderStatus:
+                          "Confirmed",
+                      }
+                    )
+                  }
+                >
+                  <Check size={18} />
+                  Approve Payment
+                </button>
 
-                <div className="summary-note">
+                <button
+                  className="reject-button"
+                  onClick={() =>
+                    updateOrder(
+                      selectedOrder.id,
+                      {
+                        paymentStatus:
+                          "Rejected",
+                        orderStatus:
+                          "Rejected",
+                      }
+                    )
+                  }
+                >
+                  <XCircle size={18} />
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-                  🔒 Pay securely using GPay, PhonePe
-                  or any UPI app. Your payment screenshot
-                  will be verified manually.
+  /* ================= CUSTOMER WEBSITE ================= */
 
-                </div>
-
-              </aside>
-
+  return (
+    <div className="app">
+      <header className="navbar">
+        <div className="nav-inner">
+          <button
+            className="brand"
+            onClick={() => setPage("home")}
+          >
+            <div className="brand-icon">
+              🍽️
             </div>
 
-          </div>
+            <div>
+              <h1>Pearl City</h1>
+              <span>Parotta Stall</span>
+            </div>
+          </button>
 
+          <nav
+            className={
+              menuOpen
+                ? "nav-links open"
+                : "nav-links"
+            }
+          >
+            <button
+              onClick={() => {
+                setPage("home");
+                setMenuOpen(false);
+              }}
+            >
+              Home
+            </button>
+
+            <button
+              onClick={() => {
+                setPage("menu");
+                setMenuOpen(false);
+              }}
+            >
+              Menu
+            </button>
+
+            <button
+              onClick={() => {
+                setPage("booking");
+                setMenuOpen(false);
+              }}
+            >
+              Pre-Book
+            </button>
+
+            <button
+              className="admin-nav-link"
+              onClick={() => {
+                setPage(
+                  isAdmin ? "admin" : "adminLogin"
+                );
+                setMenuOpen(false);
+              }}
+            >
+              <Lock size={14} />
+              Admin
+            </button>
+          </nav>
+
+          <button
+            className="cart-button"
+            onClick={() => setPage("cart")}
+          >
+            <ShoppingCart size={20} />
+            <span>Cart</span>
+
+            {totalItems > 0 && (
+              <b>{totalItems}</b>
+            )}
+          </button>
+
+          <button
+            className="mobile-menu"
+            onClick={() =>
+              setMenuOpen(!menuOpen)
+            }
+          >
+            <MenuIcon />
+          </button>
         </div>
+      </header>
 
+      {/* HOME */}
+
+      {page === "home" && (
+        <main>
+          <section className="hero">
+            <div className="hero-content">
+              <div className="hero-badge">
+                🔥 Food Carnival Special
+              </div>
+
+              <h2>
+                Taste the Real
+                <span> Thoothukudi Flavour!</span>
+              </h2>
+
+              <p>
+                Authentic South Indian food made
+                fresh for our college Food
+                Carnival.
+              </p>
+
+              <div className="hero-buttons">
+                <button
+                  className="primary-button"
+                  onClick={() =>
+                    setPage("menu")
+                  }
+                >
+                  Explore Menu
+                </button>
+
+                <button
+                  className="secondary-button"
+                  onClick={() =>
+                    setPage("booking")
+                  }
+                >
+                  Pre-Book Now
+                </button>
+              </div>
+
+              <div className="hero-features">
+                <div>
+                  <span>⚡</span>
+                  <p>Quick Pickup</p>
+                </div>
+
+                <div>
+                  <span>💳</span>
+                  <p>Easy UPI</p>
+                </div>
+
+                <div>
+                  <span>📱</span>
+                  <p>WhatsApp Order</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="hero-food">
+              <div className="food-circle">
+                🫓
+              </div>
+
+              <div className="floating-food food-one">
+                🍗
+              </div>
+
+              <div className="floating-food food-two">
+                🍨
+              </div>
+
+              <div className="floating-food food-three">
+                🥚
+              </div>
+            </div>
+          </section>
+
+          <section className="section">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  OUR SPECIALS
+                </span>
+                <h2>Today's Favorites</h2>
+              </div>
+
+              <button
+                className="view-all"
+                onClick={() =>
+                  setPage("menu")
+                }
+              >
+                View Full Menu →
+              </button>
+            </div>
+
+            <div className="food-grid">
+              {MENU.map((item) => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  onAdd={() =>
+                    addToCart(item)
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
+
+      {/* MENU */}
+
+      {page === "menu" && (
+        <main className="page-container">
+          <PageHeader
+            title="Our Menu"
+            eyebrow="FOOD CARNIVAL"
+            subtitle="Choose your favourite food and add it to your cart."
+            onBack={() => setPage("home")}
+          />
+
+          <div className="food-grid large">
+            {MENU.map((item) => (
+              <FoodCard
+                key={item.id}
+                item={item}
+                onAdd={() =>
+                  addToCart(item)
+                }
+              />
+            ))}
+          </div>
+        </main>
+      )}
+
+      {/* CART */}
+
+      {page === "cart" && (
+        <main className="page-container">
+          <PageHeader
+            title="Shopping Cart"
+            eyebrow="YOUR ORDER"
+            onBack={() => setPage("menu")}
+          />
+
+          {cart.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                🛒
+              </div>
+
+              <h3>Your cart is empty</h3>
+
+              <p>
+                Add some delicious food to continue.
+              </p>
+
+              <button
+                className="primary-button"
+                onClick={() =>
+                  setPage("menu")
+                }
+              >
+                Browse Menu
+              </button>
+            </div>
+          ) : (
+            <div className="cart-layout">
+              <div className="cart-items">
+                {cart.map((item) => (
+                  <div
+                    className="cart-item"
+                    key={item.id}
+                  >
+                    <div className="cart-food-icon">
+                      {item.emoji}
+                    </div>
+
+                    <div className="cart-info">
+                      <h3>{item.name}</h3>
+                      <p>{item.subtitle}</p>
+                      <strong>
+                        ₹{item.price}
+                      </strong>
+                    </div>
+
+                    <div className="quantity">
+                      <button
+                        onClick={() =>
+                          decreaseQuantity(
+                            item.id
+                          )
+                        }
+                      >
+                        <Minus size={15} />
+                      </button>
+
+                      <span>
+                        {item.quantity}
+                      </span>
+
+                      <button
+                        onClick={() =>
+                          increaseQuantity(
+                            item.id
+                          )
+                        }
+                      >
+                        <Plus size={15} />
+                      </button>
+                    </div>
+
+                    <strong className="cart-total">
+                      ₹
+                      {item.price *
+                        item.quantity}
+                    </strong>
+
+                    <button
+                      className="delete-button"
+                      onClick={() =>
+                        removeItem(item.id)
+                      }
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="summary-card">
+                <h3>Order Summary</h3>
+
+                <div className="summary-row">
+                  <span>Items</span>
+                  <span>{totalItems}</span>
+                </div>
+
+                <div className="summary-row">
+                  <span>Subtotal</span>
+                  <span>
+                    ₹{totalPrice}
+                  </span>
+                </div>
+
+                <div className="summary-divider" />
+
+                <div className="summary-total">
+                  <span>Total</span>
+                  <strong>
+                    ₹{totalPrice}
+                  </strong>
+                </div>
+
+                <button
+                  className="primary-button full"
+                  onClick={() =>
+                    setPage("booking")
+                  }
+                >
+                  Continue Booking
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* BOOKING */}
+
+      {page === "booking" && (
+        <main className="page-container">
+          <PageHeader
+            title="Booking Details"
+            eyebrow="STEP 1 OF 2"
+            subtitle="Enter your details and choose your pickup time."
+            onBack={() => setPage("cart")}
+          />
+
+          <div className="booking-layout">
+            <div className="booking-form card">
+              <h3>👤 Customer Details</h3>
+
+              <div className="form-grid">
+                <Input
+                  label="Name"
+                  required
+                  value={formData.name}
+                  onChange={(v) =>
+                    updateForm(
+                      "name",
+                      v
+                    )
+                  }
+                  placeholder="Enter your name"
+                />
+
+                <Input
+                  label="Phone Number"
+                  required
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(v) =>
+                    updateForm(
+                      "phone",
+                      v
+                        .replace(
+                          /\D/g,
+                          ""
+                        )
+                        .slice(0, 10)
+                    )
+                  }
+                  placeholder="10-digit mobile number"
+                />
+
+                <Input
+                  label="Department"
+                  required
+                  value={
+                    formData.department
+                  }
+                  onChange={(v) =>
+                    updateForm(
+                      "department",
+                      v
+                    )
+                  }
+                  placeholder="Eg: ECE"
+                />
+
+                <div className="input-group">
+                  <label>
+                    Year <span>*</span>
+                  </label>
+
+                  <select
+                    value={formData.year}
+                    onChange={(e) =>
+                      updateForm(
+                        "year",
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option value="">
+                      Select Year
+                    </option>
+                    <option>
+                      1st Year
+                    </option>
+                    <option>
+                      2nd Year
+                    </option>
+                    <option>
+                      3rd Year
+                    </option>
+                    <option>
+                      4th Year
+                    </option>
+                  </select>
+                </div>
+
+                <Input
+                  label="Email"
+                  type="email"
+                  value={
+                    formData.email
+                  }
+                  onChange={(v) =>
+                    updateForm(
+                      "email",
+                      v
+                    )
+                  }
+                  placeholder="Optional"
+                />
+              </div>
+
+              <h3 className="form-section-title">
+                📅 Pickup Details
+              </h3>
+
+              <div className="input-group">
+                <label>
+                  Pickup Date <span>*</span>
+                </label>
+
+                <div className="input-icon">
+                  <CalendarDays size={18} />
+
+                  <input
+                    type="date"
+                    min={today}
+                    value={
+                      formData.date
+                    }
+                    onChange={(e) =>
+                      updateForm(
+                        "date",
+                        e.target.value
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label>
+                  Pickup Slot <span>*</span>
+                </label>
+
+                <div className="slot-grid">
+                  {SLOTS.map((slot) => (
+                    <button
+                      type="button"
+                      key={slot}
+                      className={
+                        formData.slot ===
+                          slot
+                          ? "slot active"
+                          : "slot"
+                      }
+                      onClick={() =>
+                        updateForm(
+                          "slot",
+                          slot
+                        )
+                      }
+                    >
+                      <Clock size={14} />
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label>Notes</label>
+
+                <textarea
+                  rows="3"
+                  value={
+                    formData.notes
+                  }
+                  onChange={(e) =>
+                    updateForm(
+                      "notes",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Any special request? Optional"
+                />
+              </div>
+
+              <button
+                className="primary-button full"
+                onClick={() =>
+                  setPage("payment")
+                }
+              >
+                Continue to Payment →
+              </button>
+            </div>
+
+            <div className="summary-card">
+              <h3>Booking Summary</h3>
+
+              {cart.map((item) => (
+                <div
+                  className="summary-row"
+                  key={item.id}
+                >
+                  <span>
+                    {item.emoji}{" "}
+                    {item.name} ×{" "}
+                    {item.quantity}
+                  </span>
+
+                  <span>
+                    ₹
+                    {item.price *
+                      item.quantity}
+                  </span>
+                </div>
+              ))}
+
+              <div className="summary-divider" />
+
+              <div className="summary-total">
+                <span>Total</span>
+                <strong>
+                  ₹{totalPrice}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </main>
       )}
 
       {/* PAYMENT */}
-      {paymentOpen && !bookingSuccess && (
-        <div className="payment-page">
-          <div className="payment-container">
 
-            <div className="payment-top">
-              <button
-                className="back-button"
-                onClick={backToBooking}
+      {page === "payment" && (
+        <main className="page-container">
+          <PageHeader
+            title="Payment"
+            eyebrow="STEP 2 OF 2"
+            subtitle="Pay using UPI and upload your payment screenshot."
+            onBack={() =>
+              setPage("booking")
+            }
+          />
+
+          <div className="payment-layout">
+            <div className="payment-card card">
+              <div className="payment-title">
+                <CreditCard size={24} />
+
+                <div>
+                  <h3>UPI Payment</h3>
+                  <p>
+                    Scan the QR code to pay
+                  </p>
+                </div>
+              </div>
+
+              <div className="qr-container">
+                <img
+                  src="/payment-qr.png"
+                  alt="Payment QR"
+                  className="qr-image"
+                />
+              </div>
+
+              <div className="upi-id">
+                <span>UPI ID</span>
+                <strong>
+                  saravanananand326-2@oksbi
+                </strong>
+              </div>
+
+              <div className="payment-amount">
+                <span>Amount</span>
+                <strong>
+                  ₹{totalPrice}
+                </strong>
+              </div>
+
+              <a
+                className="upi-button"
+                href={`upi://pay?pa=saravanananand326-2@oksbi&pn=Pearl%20City%20Parotta%20Stall&am=${totalPrice}&cu=INR`}
               >
-                <ArrowLeft size={20} />
-                Back
-              </button>
-
-              <div className="booking-title">
-                <CreditCard size={22} />
-                <span>PAYMENT</span>
-              </div>
-
-              <div className="step-indicator">
-                2 / 2
-              </div>
+                💳 Open UPI App
+              </a>
             </div>
 
-            <div className="payment-heading">
-              <p className="section-label">ALMOST DONE 🔥</p>
-              <h1>Pay & <span>Confirm</span></h1>
-              <p>
-                Pay using GPay, PhonePe or any UPI app, then upload the screenshot.
+            <div className="payment-card card">
+              <h3>
+                📸 Payment Screenshot
+              </h3>
+
+              <p className="muted">
+                Complete payment and upload
+                the screenshot for admin
+                verification.
               </p>
-            </div>
 
-            <div className="payment-layout">
+              <label className="upload-box">
+                {!paymentPreview ? (
+                  <>
+                    <Upload size={35} />
 
-              <div className="payment-card">
+                    <strong>
+                      Click to upload
+                    </strong>
 
-                <div className="payment-amount">
-                  <span>Total Amount</span>
-                  <strong>₹{totalPrice}</strong>
-                </div>
+                    <span>
+                      PNG / JPG / JPEG •
+                      Max 5MB
+                    </span>
+                  </>
+                ) : (
+                  <div className="preview-wrapper">
+                    <img
+                      src={
+                        paymentPreview
+                      }
+                      alt="Payment preview"
+                    />
 
-                <div className="payment-methods">
-                  <a
-                    className="upi-pay-button gpay-button"
-                    href={`upi://pay?pa=saravanananand326-2@oksbi&pn=Pearl%20City%20Parotta%20Stall&am=${totalPrice}&cu=INR`}
-                  >
-                    <Smartphone size={19} />
-                    Pay with GPay
-                  </a>
-
-                  <a
-                    className="upi-pay-button phonepe-button"
-                    href={`upi://pay?pa=saravanananand326-2@oksbi&pn=Pearl%20City%20Parotta%20Stall&am=${totalPrice}&cu=INR`}
-                  >
-                    <Smartphone size={19} />
-                    Pay with PhonePe
-                  </a>
-                </div>
-
-                <div className="qr-payment-card">
-                  <h3>Scan & Pay</h3>
-                  <p>Use any UPI app to scan this QR</p>
-
-                  <img
-                    src="/payment-qr.png"
-                    alt="Pearl City Parotta Stall UPI QR Code"
-                    className="payment-qr-image"
-                  />
-
-                  <div className="upi-id-box">
-                    <span>UPI ID</span>
-                    <strong>saravanananand326-2@oksbi</strong>
-                  </div>
-                </div>
-
-                <div className="payment-instruction">
-                  <strong>After payment:</strong>
-                  <span>Upload the successful payment screenshot below.</span>
-                </div>
-
-                <label className="screenshot-upload">
-                  <Upload size={22} />
-                  <strong>
-                    {paymentScreenshot
-                      ? "Screenshot selected"
-                      : "Upload Payment Screenshot"}
-                  </strong>
-                  <small>
-                    {paymentScreenshot
-                      ? paymentScreenshot.name
-                      : "PNG, JPG or JPEG • Max 5 MB"}
-                  </small>
-
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={handleScreenshotChange}
-                  />
-                </label>
-
-                {paymentScreenshot && (
-                  <div className="screenshot-selected">
-                    <ImageIcon size={18} />
-                    <span>{paymentScreenshot.name}</span>
                     <button
                       type="button"
-                      onClick={() => setPaymentScreenshot(null)}
+                      className="remove-preview"
+                      onClick={(e) => {
+                        e.preventDefault();
+
+                        setPaymentPreview(
+                          ""
+                        );
+
+                        setPaymentScreenshot(
+                          null
+                        );
+                      }}
                     >
-                      <X size={17} />
+                      <X size={16} />
                     </button>
                   </div>
                 )}
 
-                <button
-                  className="confirm-payment-button"
-                  onClick={confirmBooking}
-                >
-                  <CheckCircle size={20} />
-                  Confirm Pre-Booking
-                </button>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={
+                    handleScreenshot
+                  }
+                />
+              </label>
 
-                <p className="payment-warning">
-                  ⚠️ Your booking will remain pending until the payment screenshot is verified.
-                </p>
-              </div>
-
-              <aside className="payment-summary">
-                <p className="section-label">YOUR ORDER</p>
-                <h2>Order Summary</h2>
-
-                {cart.map((item) => (
-                  <div className="payment-summary-item" key={item.id}>
-                    <div>
-                      <strong>
-                        {item.name} {item.variant}
-                      </strong>
-                      <span>Qty: {item.quantity}</span>
-                    </div>
-                    <strong>₹{item.price * item.quantity}</strong>
-                  </div>
-                ))}
-
-                <div className="payment-summary-total">
-                  <span>Total</span>
-                  <strong>₹{totalPrice}</strong>
-                </div>
-
-                <div className="payment-customer">
-                  <strong>Pickup</strong>
-                  <span>{formData.date}</span>
-                  <span>{formData.slot}</span>
-                </div>
-              </aside>
-
+              <button
+                className="primary-button full"
+                onClick={
+                  confirmBooking
+                }
+              >
+                <CheckCircle size={19} />
+                Confirm Booking
+              </button>
             </div>
           </div>
-        </div>
+        </main>
       )}
 
-      {/* BOOKING SUCCESS */}
-      {bookingSuccess && (
-        <div className="payment-page">
+      {/* SUCCESS */}
+
+      {page === "success" && (
+        <main className="success-page">
           <div className="success-card">
             <div className="success-icon">
-              <CheckCircle size={52} />
+              <CheckCircle size={60} />
             </div>
 
-            <p className="section-label">BOOKING RECEIVED 🎉</p>
+            <span className="eyebrow">
+              BOOKING RECEIVED
+            </span>
 
-            <h1>Pre-Booking <span>Confirmed</span></h1>
+            <h2>
+              Order Ready! 🎉
+            </h2>
 
             <p>
-              Your payment screenshot has been submitted for verification.
+              Your order has been saved.
+              Send the details to the
+              stall through WhatsApp.
             </p>
 
-            <div className="booking-id-box">
-              <span>YOUR BOOKING ID</span>
-              <strong>{bookingId}</strong>
+            <div className="booking-id">
+              <span>
+                YOUR BOOKING ID
+              </span>
+
+              <strong>
+                {bookingId}
+              </strong>
             </div>
 
             <div className="success-details">
               <div>
-                <span>Name</span>
-                <strong>{formData.name}</strong>
+                <CalendarDays size={17} />
+                {formData.date}
               </div>
+
               <div>
-                <span>Total</span>
-                <strong>₹{totalPrice}</strong>
+                <Clock size={17} />
+                {formData.slot}
               </div>
+
               <div>
-                <span>Pickup</span>
-                <strong>{formData.slot}</strong>
+                <ShoppingCart size={17} />
+                {totalItems} items
+              </div>
+
+              <div>
+                <IndianRupee size={17} />
+                {totalPrice}
               </div>
             </div>
 
-            <p className="success-note">
-              Show this Booking ID at the stall after your payment is verified.
+            <button
+              className="whatsapp-button"
+              onClick={
+                sendWhatsAppOrder
+              }
+            >
+              <MessageCircle size={21} />
+              Send Order on WhatsApp
+            </button>
+
+            <p className="whatsapp-note">
+              Please send the WhatsApp
+              message so the stall team
+              receives the order details.
             </p>
 
             <button
-              className="primary-button"
-              onClick={() => {
-                setBookingOpen(false);
-                setPaymentOpen(false);
-                setBookingSuccess(false);
-                setCart([]);
-                setPaymentScreenshot(null);
-                setBookingId("");
-              }}
+              className="text-button"
+              onClick={
+                resetOrder
+              }
             >
-              Done
+              Create Another Booking
             </button>
           </div>
-        </div>
+        </main>
       )}
-
     </div>
+  );
+}
+
+function FoodCard({ item, onAdd }) {
+  return (
+    <div className="food-card">
+      <div className="food-image">
+        {item.emoji}
+      </div>
+
+      <div className="food-content">
+        <span className="food-tag">
+          POPULAR
+        </span>
+
+        <h3>{item.name}</h3>
+
+        <p>{item.subtitle}</p>
+
+        <div className="food-bottom">
+          <strong>
+            ₹{item.price}
+          </strong>
+
+          <button onClick={onAdd}>
+            <Plus size={17} />
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PageHeader({
+  title,
+  eyebrow,
+  subtitle,
+  onBack,
+}) {
+  return (
+    <div className="page-header">
+      <button
+        className="back-button"
+        onClick={onBack}
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
+
+      <span className="eyebrow">
+        {eyebrow}
+      </span>
+
+      <h2>{title}</h2>
+
+      {subtitle && <p>{subtitle}</p>}
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const className =
+    status === "Approved" ||
+      status === "Confirmed"
+      ? "status approved"
+      : status === "Rejected"
+        ? "status rejected"
+        : status === "New"
+          ? "status new"
+          : "status pending";
+
+  return (
+    <span className={className}>
+      {status}
+    </span>
   );
 }
 
