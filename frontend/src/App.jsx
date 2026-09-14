@@ -1363,6 +1363,9 @@ function App() {
                     <option>
                       4th Year
                     </option>
+                    <option>
+                      Staff
+                    </option>
                   </select>
                 </div>
 
@@ -1506,17 +1509,35 @@ function App() {
               </div>
 
               <div className="qr-container">
-                <img
-                  src="/payment-qr.png"
-                  alt="Payment QR"
-                  className="qr-image"
-                />
+                <button
+                  type="button"
+                  className="qr-click-button"
+                  onClick={() => window.open("/payment-qr.png", "_blank")}
+                  title="Tap to open QR"
+                >
+                  <img
+                    src="/payment-qr.png"
+                    alt="Payment QR"
+                    className="qr-image"
+                  />
+                  <span className="qr-touch-hint">
+                    🔍 Tap QR to open
+                  </span>
+                </button>
               </div>
+
+              <a
+                href="/payment-qr.png"
+                download="Pearl-City-UPI-QR.png"
+                className="qr-download-button"
+              >
+                ⬇️ Download QR
+              </a>
 
               <div className="upi-id">
                 <span>UPI ID</span>
                 <strong>
-                  saravanananand326-2@oksbi
+                  kavinrajkumar03@okaxis
                 </strong>
               </div>
 
