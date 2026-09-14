@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   ShoppingCart,
   Plus,
@@ -19,15 +20,17 @@ import {
   ClipboardList,
   IndianRupee,
 } from "lucide-react";
-import "./App.css";
 
+import "./App.css";
 
 const specialOfferStyles = `
 .special-offer-card {
   position: relative;
   overflow: hidden;
   border: 2px solid #f59e0b !important;
-  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.12);
+  box-shadow:
+    0 10px 30px rgba(245, 158, 11, 0.22),
+    0 0 0 1px rgba(245, 158, 11, 0.12);
   transform: translateY(-2px);
 }
 
@@ -43,7 +46,7 @@ const specialOfferStyles = `
   letter-spacing: 0.6px;
   padding: 7px 42px;
   transform: rotate(45deg);
-  box-shadow: 0 5px 12px rgba(0,0,0,0.18);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
 }
 
 .special-offer-tag {
@@ -142,9 +145,19 @@ function Input({
 }
 
 function App() {
-  <SpecialOfferStyles />;
+  return (
+    <>
+      <SpecialOfferStyles />
+      <MainApp />
+    </>
+  );
+}
+
+function MainApp() {
   const [page, setPage] = useState("home");
+
   const [cart, setCart] = useState([]);
+
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -159,14 +172,17 @@ function App() {
 
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [paymentPreview, setPaymentPreview] = useState("");
+
   const [bookingId, setBookingId] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
+
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
 
   const [orders, setOrders] = useState([]);
+
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const totalPrice = useMemo(
@@ -180,10 +196,20 @@ function App() {
 
   const totalItems = useMemo(
     () =>
-      cart.reduce((sum, item) => sum + item.quantity, 0),
+      cart.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      ),
     [cart]
   );
 
+  /*
+   * LOAD ORDERS + ADMIN SESSION
+   *
+   * sessionStorage is used for admin login.
+   * So login stays while the browser tab/session is alive,
+   * but disappears when the session is closed.
+   */
   useEffect(() => {
     const savedOrders = localStorage.getItem(
       "pearlCityOrders"
@@ -192,10 +218,14 @@ function App() {
     if (savedOrders) {
       try {
         const parsedOrders = JSON.parse(savedOrders);
+
         setOrders(
           parsedOrders.map((order) => {
             if (!order.customer) return order;
-            const { date, ...customerWithoutDate } = order.customer;
+
+            const { date, ...customerWithoutDate } =
+              order.customer;
+
             return {
               ...order,
               customer: customerWithoutDate,
@@ -329,7 +359,9 @@ function App() {
     }
 
     if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-      alert("Enter a valid 10-digit Indian mobile number.");
+      alert(
+        "Enter a valid 10-digit Indian mobile number."
+      );
       return false;
     }
 
@@ -365,22 +397,34 @@ function App() {
 
     const order = {
       id,
+
       customer: {
         ...formData,
       },
+
       items: cart,
+
       total: totalPrice,
+
       screenshot: paymentPreview,
+
       paymentStatus: "Pending",
+
       orderStatus: "New",
+
       createdAt: new Date().toISOString(),
     };
 
     setOrders((prev) => [order, ...prev]);
+
     setBookingId(id);
+
     setPage("success");
   };
 
+  /*
+   * ADMIN LOGIN
+   */
   const adminLogin = (e) => {
     e.preventDefault();
 
@@ -389,8 +433,13 @@ function App() {
       adminPassword === ADMIN_PASSWORD
     ) {
       setIsAdmin(true);
+
       setAdminError("");
 
+      /*
+       * Store login only in sessionStorage.
+       * It will not remain after browser session ends.
+       */
       sessionStorage.setItem(
         "pearlCityAdmin",
         "true"
@@ -407,12 +456,35 @@ function App() {
     }
   };
 
+  /*
+   * ADMIN LOGOUT
+   *
+   * This completely removes the admin session.
+   */
   const adminLogout = () => {
     setIsAdmin(false);
+
     sessionStorage.removeItem(
       "pearlCityAdmin"
     );
+
+    setAdminUsername("");
+    setAdminPassword("");
+    setAdminError("");
+
+    setSelectedOrder(null);
+
     setPage("home");
+  };
+
+  /*
+   * VIEW WEBSITE
+   *
+   * Important:
+   * Clicking View Website also logs the admin out.
+   */
+  const viewWebsiteAndLogout = () => {
+    adminLogout();
   };
 
   const updateOrder = (id, changes) => {
@@ -439,8 +511,11 @@ function App() {
 
   const resetOrder = () => {
     setCart([]);
+
     setPaymentScreenshot(null);
+
     setPaymentPreview("");
+
     setBookingId("");
 
     setFormData({
@@ -468,7 +543,9 @@ function App() {
     (o) => o.paymentStatus === "Rejected"
   );
 
-  /* ================= ADMIN LOGIN ================= */
+  /*
+   * ================= ADMIN LOGIN =================
+   */
 
   if (page === "adminLogin") {
     return (
@@ -530,12 +607,50 @@ function App() {
     );
   }
 
-  /* ================= ADMIN DASHBOARD ================= */
+  /*
+   * ================= ADMIN DASHBOARD =================
+   */
 
   if (page === "admin") {
+    /*
+     * Safety check:
+     * If admin session is missing, go back to login.
+     */
     if (!isAdmin) {
-      setPage("adminLogin");
-      return null;
+      return (
+        <div
+          className="admin-login-page"
+          style={{
+            minHeight: "100vh",
+          }}
+        >
+          <div
+            className="admin-login-card"
+            style={{
+              textAlign: "center",
+            }}
+          >
+            <Lock size={40} />
+
+            <h2>
+              Admin Session Expired
+            </h2>
+
+            <p>
+              Please login again to access the dashboard.
+            </p>
+
+            <button
+              className="primary-button full"
+              onClick={() =>
+                setPage("adminLogin")
+              }
+            >
+              Login Again
+            </button>
+          </div>
+        </div>
+      );
     }
 
     return (
@@ -545,13 +660,14 @@ function App() {
             <span className="eyebrow">
               PEARL CITY
             </span>
+
             <h1>Admin Dashboard</h1>
           </div>
 
           <div className="admin-nav-actions">
             <button
               className="secondary-button"
-              onClick={() => setPage("home")}
+              onClick={viewWebsiteAndLogout}
             >
               View Website
             </button>
@@ -575,7 +691,9 @@ function App() {
 
               <div>
                 <span>Total Orders</span>
-                <strong>{orders.length}</strong>
+                <strong>
+                  {orders.length}
+                </strong>
               </div>
             </div>
 
@@ -586,6 +704,7 @@ function App() {
 
               <div>
                 <span>Pending</span>
+
                 <strong>
                   {pendingOrders.length}
                 </strong>
@@ -599,6 +718,7 @@ function App() {
 
               <div>
                 <span>Approved</span>
+
                 <strong>
                   {approvedOrders.length}
                 </strong>
@@ -612,6 +732,7 @@ function App() {
 
               <div>
                 <span>Rejected</span>
+
                 <strong>
                   {rejectedOrders.length}
                 </strong>
@@ -637,7 +758,9 @@ function App() {
             {orders.length === 0 ? (
               <div className="empty-state">
                 <ClipboardList size={50} />
+
                 <h3>No orders yet</h3>
+
                 <p>
                   Customer bookings will appear here.
                 </p>
@@ -770,6 +893,7 @@ function App() {
               <div className="order-detail-grid">
                 <div>
                   <span>Customer</span>
+
                   <strong>
                     {selectedOrder.customer.name}
                   </strong>
@@ -777,6 +901,7 @@ function App() {
 
                 <div>
                   <span>Phone</span>
+
                   <strong>
                     {selectedOrder.customer.phone}
                   </strong>
@@ -784,13 +909,18 @@ function App() {
 
                 <div>
                   <span>Department</span>
+
                   <strong>
-                    {selectedOrder.customer.department}
+                    {
+                      selectedOrder.customer
+                        .department
+                    }
                   </strong>
                 </div>
 
                 <div>
                   <span>Year</span>
+
                   <strong>
                     {selectedOrder.customer.year}
                   </strong>
@@ -798,6 +928,7 @@ function App() {
 
                 <div>
                   <span>Pickup Slot</span>
+
                   <strong>
                     {selectedOrder.customer.slot}
                   </strong>
@@ -816,6 +947,7 @@ function App() {
                       <span>
                         {item.emoji}{" "}
                         {item.name}
+
                         <small>
                           {" "}
                           × {item.quantity}
@@ -833,6 +965,7 @@ function App() {
 
                 <div className="modal-total">
                   <span>Total</span>
+
                   <strong>
                     ₹{selectedOrder.total}
                   </strong>
@@ -840,7 +973,9 @@ function App() {
               </div>
 
               <div className="modal-block">
-                <h3>📸 Payment Screenshot</h3>
+                <h3>
+                  📸 Payment Screenshot
+                </h3>
 
                 {selectedOrder.screenshot ? (
                   <img
@@ -860,8 +995,12 @@ function App() {
               {selectedOrder.customer.notes && (
                 <div className="notes-box">
                   <strong>📝 Notes</strong>
+
                   <p>
-                    {selectedOrder.customer.notes}
+                    {
+                      selectedOrder.customer
+                        .notes
+                    }
                   </p>
                 </div>
               )}
@@ -910,7 +1049,9 @@ function App() {
     );
   }
 
-  /* ================= CUSTOMER WEBSITE ================= */
+  /*
+   * ================= CUSTOMER WEBSITE =================
+   */
 
   return (
     <div className="app">
@@ -967,9 +1108,16 @@ function App() {
             <button
               className="admin-nav-link"
               onClick={() => {
+                /*
+                 * If currently logged in, go dashboard.
+                 * Otherwise go to login.
+                 */
                 setPage(
-                  isAdmin ? "admin" : "adminLogin"
+                  isAdmin
+                    ? "admin"
+                    : "adminLogin"
                 );
+
                 setMenuOpen(false);
               }}
             >
@@ -983,6 +1131,7 @@ function App() {
             onClick={() => setPage("cart")}
           >
             <ShoppingCart size={20} />
+
             <span>Cart</span>
 
             {totalItems > 0 && (
@@ -1013,7 +1162,10 @@ function App() {
 
               <h2>
                 Taste the Real
-                <span> Thoothukudi Flavour!</span>
+                <span>
+                  {" "}
+                  Thoothukudi Flavour!
+                </span>
               </h2>
 
               <p>
@@ -1085,6 +1237,7 @@ function App() {
                 <span className="eyebrow">
                   OUR SPECIALS
                 </span>
+
                 <h2>Today's Favorites</h2>
               </div>
 
@@ -1183,7 +1336,9 @@ function App() {
 
                     <div className="cart-info">
                       <h3>{item.name}</h3>
+
                       <p>{item.subtitle}</p>
+
                       <strong>
                         ₹{item.price}
                       </strong>
@@ -1252,6 +1407,7 @@ function App() {
 
                 <div className="summary-total">
                   <span>Total</span>
+
                   <strong>
                     ₹{totalPrice}
                   </strong>
@@ -1292,10 +1448,7 @@ function App() {
                   required
                   value={formData.name}
                   onChange={(v) =>
-                    updateForm(
-                      "name",
-                      v
-                    )
+                    updateForm("name", v)
                   }
                   placeholder="Enter your name"
                 />
@@ -1309,10 +1462,7 @@ function App() {
                     updateForm(
                       "phone",
                       v
-                        .replace(
-                          /\D/g,
-                          ""
-                        )
+                        .replace(/\D/g, "")
                         .slice(0, 10)
                     )
                   }
@@ -1351,18 +1501,23 @@ function App() {
                     <option value="">
                       Select Year
                     </option>
+
                     <option>
                       1st Year
                     </option>
+
                     <option>
                       2nd Year
                     </option>
+
                     <option>
                       3rd Year
                     </option>
+
                     <option>
                       4th Year
                     </option>
+
                     <option>
                       Staff
                     </option>
@@ -1372,9 +1527,7 @@ function App() {
                 <Input
                   label="Email"
                   type="email"
-                  value={
-                    formData.email
-                  }
+                  value={formData.email}
                   onChange={(v) =>
                     updateForm(
                       "email",
@@ -1391,7 +1544,8 @@ function App() {
 
               <div className="input-group">
                 <label>
-                  Pickup Slot <span>*</span>
+                  Pickup Slot{" "}
+                  <span>*</span>
                 </label>
 
                 <div className="slot-grid">
@@ -1424,9 +1578,7 @@ function App() {
 
                 <textarea
                   rows="3"
-                  value={
-                    formData.notes
-                  }
+                  value={formData.notes}
                   onChange={(e) =>
                     updateForm(
                       "notes",
@@ -1473,6 +1625,7 @@ function App() {
 
               <div className="summary-total">
                 <span>Total</span>
+
                 <strong>
                   ₹{totalPrice}
                 </strong>
@@ -1502,17 +1655,25 @@ function App() {
 
                 <div>
                   <h3>UPI Payment</h3>
+
                   <p>
                     Scan the QR code to pay
                   </p>
                 </div>
               </div>
 
+              {/* CLICKABLE QR */}
+
               <div className="qr-container">
                 <button
                   type="button"
                   className="qr-click-button"
-                  onClick={() => window.open("/payment-qr.png", "_blank")}
+                  onClick={() =>
+                    window.open(
+                      "/payment-qr.png",
+                      "_blank"
+                    )
+                  }
                   title="Tap to open QR"
                 >
                   <img
@@ -1520,11 +1681,14 @@ function App() {
                     alt="Payment QR"
                     className="qr-image"
                   />
+
                   <span className="qr-touch-hint">
                     🔍 Tap QR to open
                   </span>
                 </button>
               </div>
+
+              {/* DOWNLOAD QR */}
 
               <a
                 href="/payment-qr.png"
@@ -1536,6 +1700,7 @@ function App() {
 
               <div className="upi-id">
                 <span>UPI ID</span>
+
                 <strong>
                   kavinrajkumar03@okaxis
                 </strong>
@@ -1543,6 +1708,7 @@ function App() {
 
               <div className="payment-amount">
                 <span>Amount</span>
+
                 <strong>
                   ₹{totalPrice}
                 </strong>
@@ -1584,9 +1750,7 @@ function App() {
                 ) : (
                   <div className="preview-wrapper">
                     <img
-                      src={
-                        paymentPreview
-                      }
+                      src={paymentPreview}
                       alt="Payment preview"
                     />
 
@@ -1596,9 +1760,7 @@ function App() {
                       onClick={(e) => {
                         e.preventDefault();
 
-                        setPaymentPreview(
-                          ""
-                        );
+                        setPaymentPreview("");
 
                         setPaymentScreenshot(
                           null
@@ -1684,9 +1846,7 @@ function App() {
 
             <button
               className="text-button"
-              onClick={
-                resetOrder
-              }
+              onClick={resetOrder}
             >
               Create Another Booking
             </button>
@@ -1701,9 +1861,17 @@ function FoodCard({ item, onAdd }) {
   const isSpecialOffer = item.id === 2;
 
   return (
-    <div className={isSpecialOffer ? "food-card special-offer-card" : "food-card"}>
+    <div
+      className={
+        isSpecialOffer
+          ? "food-card special-offer-card"
+          : "food-card"
+      }
+    >
       {isSpecialOffer && (
-        <div className="special-offer-ribbon">🔥 SPECIAL OFFER</div>
+        <div className="special-offer-ribbon">
+          🔥 SPECIAL OFFER
+        </div>
       )}
 
       <div className="food-image">
@@ -1711,18 +1879,40 @@ function FoodCard({ item, onAdd }) {
       </div>
 
       <div className="food-content">
-        <span className={isSpecialOffer ? "food-tag special-offer-tag" : "food-tag"}>
-          {isSpecialOffer ? "BEST VALUE" : "POPULAR"}
+        <span
+          className={
+            isSpecialOffer
+              ? "food-tag special-offer-tag"
+              : "food-tag"
+          }
+        >
+          {isSpecialOffer
+            ? "BEST VALUE"
+            : "POPULAR"}
         </span>
 
         <h3>{item.name}</h3>
 
-        <p className={isSpecialOffer ? "special-offer-subtitle" : ""}>
-          {isSpecialOffer ? "3 Pieces • Only ₹50" : item.subtitle}
+        <p
+          className={
+            isSpecialOffer
+              ? "special-offer-subtitle"
+              : ""
+          }
+        >
+          {isSpecialOffer
+            ? "3 Pieces • Only ₹50"
+            : item.subtitle}
         </p>
 
         <div className="food-bottom">
-          <strong className={isSpecialOffer ? "special-offer-price" : ""}>
+          <strong
+            className={
+              isSpecialOffer
+                ? "special-offer-price"
+                : ""
+            }
+          >
             ₹{item.price}
           </strong>
 
