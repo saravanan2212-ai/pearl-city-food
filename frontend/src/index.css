@@ -59,3 +59,68 @@ img {
 ::-webkit-scrollbar-thumb:hover {
   background: #f97316;
 }
+
+.order-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.complete-button,
+.delete-order-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: 0.2s ease;
+}
+
+.complete-button {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.complete-button:hover {
+  background: #bbf7d0;
+  transform: translateY(-1px);
+}
+
+.delete-order-button {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.delete-order-button:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+function StatusBadge({
+  status
+
+}) {
+  const className=status==="Approved" || status==="Confirmed" || status==="Completed"
+  ? "status approved"
+  : status==="Rejected"
+    ? "status rejected"
+    : status==="New"
+    ? "status new"
+    : "status pending";
+
+  return (<span className= {
+      className
+    }
+
+    > {
+      status
+    }
+
+    </span>);
+}

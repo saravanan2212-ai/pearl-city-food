@@ -1,3 +1,4 @@
+```jsx
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
@@ -24,44 +25,44 @@ import {
 import "./App.css";
 
 const specialOfferStyles = `
-.special-offer-card {
+  .special - offer - card {
   position: relative;
   overflow: hidden;
-  border: 2px solid #f59e0b !important;
-  box-shadow:
-    0 10px 30px rgba(245, 158, 11, 0.22),
+  border: 2px solid #f59e0b!important;
+  box - shadow:
+  0 10px 30px rgba(245, 158, 11, 0.22),
     0 0 0 1px rgba(245, 158, 11, 0.12);
   transform: translateY(-2px);
 }
 
-.special-offer-ribbon {
+.special - offer - ribbon {
   position: absolute;
   top: 12px;
   right: -38px;
-  z-index: 5;
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  z - index: 5;
+  background: linear - gradient(135deg, #f59e0b, #ef4444);
   color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.6px;
+  font - size: 11px;
+  font - weight: 900;
+  letter - spacing: 0.6px;
   padding: 7px 42px;
   transform: rotate(45deg);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
+  box - shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
 }
 
-.special-offer-tag {
-  background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
-  color: #fff !important;
+.special - offer - tag {
+  background: linear - gradient(135deg, #f59e0b, #ef4444)!important;
+  color: #fff!important;
 }
 
-.special-offer-subtitle {
-  font-weight: 800 !important;
-  color: #d97706 !important;
+.special - offer - subtitle {
+  font - weight: 800!important;
+  color: #d97706!important;
 }
 
-.special-offer-price {
-  font-size: 1.35rem !important;
-  color: #ea580c !important;
+.special - offer - price {
+  font - size: 1.35rem!important;
+  color: #ea580c!important;
 }
 `;
 
@@ -71,6 +72,9 @@ function SpecialOfferStyles() {
 
 const ADMIN_USERNAME = "PEARLCITY";
 const ADMIN_PASSWORD = "ECE";
+
+const UPI_ID = "kavinrajkumar03@okaxis";
+const UPI_NAME = "Kavin Raj Kumar";
 
 const MENU = [
   {
@@ -155,9 +159,7 @@ function App() {
 
 function MainApp() {
   const [page, setPage] = useState("home");
-
   const [cart, setCart] = useState([]);
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -172,17 +174,14 @@ function MainApp() {
 
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [paymentPreview, setPaymentPreview] = useState("");
-
   const [bookingId, setBookingId] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
-
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
 
   const [orders, setOrders] = useState([]);
-
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const totalPrice = useMemo(
@@ -203,17 +202,9 @@ function MainApp() {
     [cart]
   );
 
-  /*
-   * LOAD ORDERS + ADMIN SESSION
-   *
-   * sessionStorage is used for admin login.
-   * So login stays while the browser tab/session is alive,
-   * but disappears when the session is closed.
-   */
+  // Load saved orders and admin session
   useEffect(() => {
-    const savedOrders = localStorage.getItem(
-      "pearlCityOrders"
-    );
+    const savedOrders = localStorage.getItem("pearlCityOrders");
 
     if (savedOrders) {
       try {
@@ -237,15 +228,14 @@ function MainApp() {
       }
     }
 
-    const loggedIn = sessionStorage.getItem(
-      "pearlCityAdmin"
-    );
+    const loggedIn = sessionStorage.getItem("pearlCityAdmin");
 
     if (loggedIn === "true") {
       setIsAdmin(true);
     }
   }, []);
 
+  // Save orders
   useEffect(() => {
     localStorage.setItem(
       "pearlCityOrders",
@@ -270,9 +260,9 @@ function MainApp() {
         return prev.map((x) =>
           x.id === item.id
             ? {
-              ...x,
-              quantity: x.quantity + 1,
-            }
+                ...x,
+                quantity: x.quantity + 1,
+              }
             : x
         );
       }
@@ -292,9 +282,9 @@ function MainApp() {
       prev.map((item) =>
         item.id === id
           ? {
-            ...item,
-            quantity: item.quantity + 1,
-          }
+              ...item,
+              quantity: item.quantity + 1,
+            }
           : item
       )
     );
@@ -306,9 +296,9 @@ function MainApp() {
         .map((item) =>
           item.id === id
             ? {
-              ...item,
-              quantity: item.quantity - 1,
-            }
+                ...item,
+                quantity: item.quantity - 1,
+              }
             : item
         )
         .filter((item) => item.quantity > 0)
@@ -397,34 +387,23 @@ function MainApp() {
 
     const order = {
       id,
-
       customer: {
         ...formData,
       },
-
       items: cart,
-
       total: totalPrice,
-
       screenshot: paymentPreview,
-
       paymentStatus: "Pending",
-
       orderStatus: "New",
-
       createdAt: new Date().toISOString(),
     };
 
     setOrders((prev) => [order, ...prev]);
-
     setBookingId(id);
-
     setPage("success");
   };
 
-  /*
-   * ADMIN LOGIN
-   */
+  // Admin login
   const adminLogin = (e) => {
     e.preventDefault();
 
@@ -433,13 +412,8 @@ function MainApp() {
       adminPassword === ADMIN_PASSWORD
     ) {
       setIsAdmin(true);
-
       setAdminError("");
 
-      /*
-       * Store login only in sessionStorage.
-       * It will not remain after browser session ends.
-       */
       sessionStorage.setItem(
         "pearlCityAdmin",
         "true"
@@ -447,7 +421,6 @@ function MainApp() {
 
       setAdminUsername("");
       setAdminPassword("");
-
       setPage("admin");
     } else {
       setAdminError(
@@ -456,11 +429,7 @@ function MainApp() {
     }
   };
 
-  /*
-   * ADMIN LOGOUT
-   *
-   * This completely removes the admin session.
-   */
+  // Admin logout
   const adminLogout = () => {
     setIsAdmin(false);
 
@@ -471,18 +440,10 @@ function MainApp() {
     setAdminUsername("");
     setAdminPassword("");
     setAdminError("");
-
     setSelectedOrder(null);
-
     setPage("home");
   };
 
-  /*
-   * VIEW WEBSITE
-   *
-   * Important:
-   * Clicking View Website also logs the admin out.
-   */
   const viewWebsiteAndLogout = () => {
     adminLogout();
   };
@@ -492,9 +453,9 @@ function MainApp() {
       prev.map((order) =>
         order.id === id
           ? {
-            ...order,
-            ...changes,
-          }
+              ...order,
+              ...changes,
+            }
           : order
       )
     );
@@ -502,20 +463,17 @@ function MainApp() {
     setSelectedOrder((prev) =>
       prev
         ? {
-          ...prev,
-          ...changes,
-        }
+            ...prev,
+            ...changes,
+          }
         : null
     );
   };
 
   const resetOrder = () => {
     setCart([]);
-
     setPaymentScreenshot(null);
-
     setPaymentPreview("");
-
     setBookingId("");
 
     setFormData({
@@ -543,9 +501,7 @@ function MainApp() {
     (o) => o.paymentStatus === "Rejected"
   );
 
-  /*
-   * ================= ADMIN LOGIN =================
-   */
+  // ================= ADMIN LOGIN =================
 
   if (page === "adminLogin") {
     return (
@@ -607,15 +563,9 @@ function MainApp() {
     );
   }
 
-  /*
-   * ================= ADMIN DASHBOARD =================
-   */
+  // ================= ADMIN DASHBOARD =================
 
   if (page === "admin") {
-    /*
-     * Safety check:
-     * If admin session is missing, go back to login.
-     */
     if (!isAdmin) {
       return (
         <div
@@ -691,6 +641,7 @@ function MainApp() {
 
               <div>
                 <span>Total Orders</span>
+
                 <strong>
                   {orders.length}
                 </strong>
@@ -933,6 +884,16 @@ function MainApp() {
                     {selectedOrder.customer.slot}
                   </strong>
                 </div>
+
+                {selectedOrder.customer.email && (
+                  <div>
+                    <span>Email</span>
+
+                    <strong>
+                      {selectedOrder.customer.email}
+                    </strong>
+                  </div>
+                )}
               </div>
 
               <div className="modal-block">
@@ -1049,9 +1010,7 @@ function MainApp() {
     );
   }
 
-  /*
-   * ================= CUSTOMER WEBSITE =================
-   */
+  // ================= CUSTOMER WEBSITE =================
 
   return (
     <div className="app">
@@ -1108,10 +1067,6 @@ function MainApp() {
             <button
               className="admin-nav-link"
               onClick={() => {
-                /*
-                 * If currently logged in, go dashboard.
-                 * Otherwise go to login.
-                 */
                 setPage(
                   isAdmin
                     ? "admin"
@@ -1398,6 +1353,7 @@ function MainApp() {
 
                 <div className="summary-row">
                   <span>Subtotal</span>
+
                   <span>
                     ₹{totalPrice}
                   </span>
@@ -1555,7 +1511,7 @@ function MainApp() {
                       key={slot}
                       className={
                         formData.slot ===
-                          slot
+                        slot
                           ? "slot active"
                           : "slot"
                       }
@@ -1591,9 +1547,60 @@ function MainApp() {
 
               <button
                 className="primary-button full"
-                onClick={() =>
-                  setPage("payment")
-                }
+                onClick={() => {
+                  if (cart.length === 0) {
+                    alert(
+                      "Please add food items first."
+                    );
+                    setPage("menu");
+                    return;
+                  }
+
+                  if (
+                    !formData.name.trim()
+                  ) {
+                    alert(
+                      "Please enter your name."
+                    );
+                    return;
+                  }
+
+                  if (
+                    !/^[6-9]\d{9}$/.test(
+                      formData.phone
+                    )
+                  ) {
+                    alert(
+                      "Enter a valid 10-digit Indian mobile number."
+                    );
+                    return;
+                  }
+
+                  if (
+                    !formData.department.trim()
+                  ) {
+                    alert(
+                      "Please enter your department."
+                    );
+                    return;
+                  }
+
+                  if (!formData.year) {
+                    alert(
+                      "Please select your year."
+                    );
+                    return;
+                  }
+
+                  if (!formData.slot) {
+                    alert(
+                      "Please select pickup slot."
+                    );
+                    return;
+                  }
+
+                  setPage("payment");
+                }}
               >
                 Continue to Payment →
               </button>
@@ -1702,7 +1709,7 @@ function MainApp() {
                 <span>UPI ID</span>
 
                 <strong>
-                  kavinrajkumar03@okaxis
+                  {UPI_ID}
                 </strong>
               </div>
 
@@ -1714,12 +1721,33 @@ function MainApp() {
                 </strong>
               </div>
 
+              {/* CORRECT UPI PAYMENT BUTTON */}
+
               <a
                 className="upi-button"
-                href={`upi://pay?pa=saravanananand326-2@oksbi&pn=Pearl%20City%20Parotta%20Stall&am=${totalPrice}&cu=INR`}
+                href={`upi://pay?pa=${encodeURIComponent(
+UPI_ID
+                )}& pn=${
+  encodeURIComponent(
+    UPI_NAME
+  )
+}& am=${ totalPrice }& cu=INR`}
               >
-                💳 Open UPI App
+                💳 Open UPI App & Pay ₹
+                {totalPrice}
               </a>
+
+              <p
+                className="muted"
+                style={{
+                  textAlign: "center",
+                  marginTop: "12px",
+                  fontSize: "12px",
+                }}
+              >
+                UPI payment will be sent to{" "}
+                <strong>{UPI_ID}</strong>
+              </p>
             </div>
 
             <div className="payment-card card">
@@ -1760,7 +1788,9 @@ function MainApp() {
                       onClick={(e) => {
                         e.preventDefault();
 
-                        setPaymentPreview("");
+                        setPaymentPreview(
+                          ""
+                        );
 
                         setPaymentScreenshot(
                           null
@@ -1956,7 +1986,7 @@ function PageHeader({
 function StatusBadge({ status }) {
   const className =
     status === "Approved" ||
-      status === "Confirmed"
+    status === "Confirmed"
       ? "status approved"
       : status === "Rejected"
         ? "status rejected"
@@ -1972,3 +2002,4 @@ function StatusBadge({ status }) {
 }
 
 export default App;
+```
