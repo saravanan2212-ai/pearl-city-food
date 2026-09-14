@@ -1,6 +1,4 @@
-```jsx
 import React, { useEffect, useMemo, useState } from "react";
-
 import {
   ShoppingCart,
   Plus,
@@ -21,49 +19,48 @@ import {
   ClipboardList,
   IndianRupee,
 } from "lucide-react";
-
 import "./App.css";
 
 const specialOfferStyles = `
-  .special - offer - card {
-  position: relative;
-  overflow: hidden;
-  border: 2px solid #f59e0b!important;
-  box - shadow:
-  0 10px 30px rgba(245, 158, 11, 0.22),
-    0 0 0 1px rgba(245, 158, 11, 0.12);
-  transform: translateY(-2px);
-}
+  .special-offer-card {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #f59e0b !important;
+    box-shadow:
+      0 10px 30px rgba(245, 158, 11, 0.22),
+      0 0 0 1px rgba(245, 158, 11, 0.12);
+    transform: translateY(-2px);
+  }
 
-.special - offer - ribbon {
-  position: absolute;
-  top: 12px;
-  right: -38px;
-  z - index: 5;
-  background: linear - gradient(135deg, #f59e0b, #ef4444);
-  color: #fff;
-  font - size: 11px;
-  font - weight: 900;
-  letter - spacing: 0.6px;
-  padding: 7px 42px;
-  transform: rotate(45deg);
-  box - shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
-}
+  .special-offer-ribbon {
+    position: absolute;
+    top: 12px;
+    right: -38px;
+    z-index: 5;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    padding: 7px 42px;
+    transform: rotate(45deg);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
+  }
 
-.special - offer - tag {
-  background: linear - gradient(135deg, #f59e0b, #ef4444)!important;
-  color: #fff!important;
-}
+  .special-offer-tag {
+    background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
+    color: #fff !important;
+  }
 
-.special - offer - subtitle {
-  font - weight: 800!important;
-  color: #d97706!important;
-}
+  .special-offer-subtitle {
+    font-weight: 800 !important;
+    color: #d97706 !important;
+  }
 
-.special - offer - price {
-  font - size: 1.35rem!important;
-  color: #ea580c!important;
-}
+  .special-offer-price {
+    font-size: 1.35rem !important;
+    color: #ea580c !important;
+  }
 `;
 
 function SpecialOfferStyles() {
@@ -202,7 +199,8 @@ function MainApp() {
     [cart]
   );
 
-  // Load saved orders and admin session
+  // ================= LOAD DATA =================
+
   useEffect(() => {
     const savedOrders = localStorage.getItem("pearlCityOrders");
 
@@ -235,7 +233,8 @@ function MainApp() {
     }
   }, []);
 
-  // Save orders
+  // ================= SAVE ORDERS =================
+
   useEffect(() => {
     localStorage.setItem(
       "pearlCityOrders",
@@ -243,12 +242,16 @@ function MainApp() {
     );
   }, [orders]);
 
+  // ================= FORM =================
+
   const updateForm = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+
+  // ================= CART =================
 
   const addToCart = (item) => {
     setCart((prev) => {
@@ -260,9 +263,9 @@ function MainApp() {
         return prev.map((x) =>
           x.id === item.id
             ? {
-                ...x,
-                quantity: x.quantity + 1,
-              }
+              ...x,
+              quantity: x.quantity + 1,
+            }
             : x
         );
       }
@@ -282,9 +285,9 @@ function MainApp() {
       prev.map((item) =>
         item.id === id
           ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
+            ...item,
+            quantity: item.quantity + 1,
+          }
           : item
       )
     );
@@ -296,9 +299,9 @@ function MainApp() {
         .map((item) =>
           item.id === id
             ? {
-                ...item,
-                quantity: item.quantity - 1,
-              }
+              ...item,
+              quantity: item.quantity - 1,
+            }
             : item
         )
         .filter((item) => item.quantity > 0)
@@ -310,6 +313,8 @@ function MainApp() {
       prev.filter((item) => item.id !== id)
     );
   };
+
+  // ================= PAYMENT SCREENSHOT =================
 
   const handleScreenshot = (e) => {
     const file = e.target.files?.[0];
@@ -336,6 +341,8 @@ function MainApp() {
 
     reader.readAsDataURL(file);
   };
+
+  // ================= BOOKING VALIDATION =================
 
   const validateBooking = () => {
     if (cart.length === 0) {
@@ -378,6 +385,8 @@ function MainApp() {
     return true;
   };
 
+  // ================= CONFIRM BOOKING =================
+
   const confirmBooking = () => {
     if (!validateBooking()) return;
 
@@ -399,11 +408,13 @@ function MainApp() {
     };
 
     setOrders((prev) => [order, ...prev]);
+
     setBookingId(id);
     setPage("success");
   };
 
-  // Admin login
+  // ================= ADMIN LOGIN =================
+
   const adminLogin = (e) => {
     e.preventDefault();
 
@@ -421,6 +432,7 @@ function MainApp() {
 
       setAdminUsername("");
       setAdminPassword("");
+
       setPage("admin");
     } else {
       setAdminError(
@@ -429,7 +441,8 @@ function MainApp() {
     }
   };
 
-  // Admin logout
+  // ================= ADMIN LOGOUT =================
+
   const adminLogout = () => {
     setIsAdmin(false);
 
@@ -441,6 +454,7 @@ function MainApp() {
     setAdminPassword("");
     setAdminError("");
     setSelectedOrder(null);
+
     setPage("home");
   };
 
@@ -448,14 +462,16 @@ function MainApp() {
     adminLogout();
   };
 
+  // ================= UPDATE ORDER =================
+
   const updateOrder = (id, changes) => {
     setOrders((prev) =>
       prev.map((order) =>
         order.id === id
           ? {
-              ...order,
-              ...changes,
-            }
+            ...order,
+            ...changes,
+          }
           : order
       )
     );
@@ -463,12 +479,57 @@ function MainApp() {
     setSelectedOrder((prev) =>
       prev
         ? {
-            ...prev,
-            ...changes,
-          }
+          ...prev,
+          ...changes,
+        }
         : null
     );
   };
+
+  // ================= COMPLETE ORDER =================
+
+  const completeOrder = (id) => {
+    const order = orders.find(
+      (item) => item.id === id
+    );
+
+    if (!order) return;
+
+    if (order.paymentStatus !== "Approved") {
+      alert(
+        "Please approve the payment before completing this order."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Mark this order as Completed?"
+    );
+
+    if (!confirmed) return;
+
+    updateOrder(id, {
+      orderStatus: "Completed",
+    });
+  };
+
+  // ================= DELETE ORDER =================
+
+  const deleteOrder = (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete this order?"
+    );
+
+    if (!confirmed) return;
+
+    setOrders((prev) =>
+      prev.filter((order) => order.id !== id)
+    );
+
+    setSelectedOrder(null);
+  };
+
+  // ================= RESET ORDER =================
 
   const resetOrder = () => {
     setCart([]);
@@ -489,6 +550,8 @@ function MainApp() {
     setPage("home");
   };
 
+  // ================= ADMIN STATS =================
+
   const pendingOrders = orders.filter(
     (o) => o.paymentStatus === "Pending"
   );
@@ -501,7 +564,11 @@ function MainApp() {
     (o) => o.paymentStatus === "Rejected"
   );
 
-  // ================= ADMIN LOGIN =================
+  const completedOrders = orders.filter(
+    (o) => o.orderStatus === "Completed"
+  );
+
+  // ================= ADMIN LOGIN PAGE =================
 
   if (page === "adminLogin") {
     return (
@@ -568,17 +635,10 @@ function MainApp() {
   if (page === "admin") {
     if (!isAdmin) {
       return (
-        <div
-          className="admin-login-page"
-          style={{
-            minHeight: "100vh",
-          }}
-        >
+        <div className="admin-login-page">
           <div
             className="admin-login-card"
-            style={{
-              textAlign: "center",
-            }}
+            style={{ textAlign: "center" }}
           >
             <Lock size={40} />
 
@@ -641,10 +701,7 @@ function MainApp() {
 
               <div>
                 <span>Total Orders</span>
-
-                <strong>
-                  {orders.length}
-                </strong>
+                <strong>{orders.length}</strong>
               </div>
             </div>
 
@@ -655,7 +712,6 @@ function MainApp() {
 
               <div>
                 <span>Pending</span>
-
                 <strong>
                   {pendingOrders.length}
                 </strong>
@@ -669,9 +725,21 @@ function MainApp() {
 
               <div>
                 <span>Approved</span>
-
                 <strong>
                   {approvedOrders.length}
+                </strong>
+              </div>
+            </div>
+
+            <div className="stat-card completed">
+              <div className="stat-icon">
+                <CheckCircle />
+              </div>
+
+              <div>
+                <span>Completed</span>
+                <strong>
+                  {completedOrders.length}
                 </strong>
               </div>
             </div>
@@ -683,7 +751,6 @@ function MainApp() {
 
               <div>
                 <span>Rejected</span>
-
                 <strong>
                   {rejectedOrders.length}
                 </strong>
@@ -751,7 +818,8 @@ function MainApp() {
                             </span>
 
                             <small>
-                              {order.customer.department} •{" "}
+                              {order.customer.department}{" "}
+                              •{" "}
                               {order.customer.year}
                             </small>
                           </div>
@@ -788,15 +856,44 @@ function MainApp() {
                         </td>
 
                         <td>
-                          <button
-                            className="view-button"
-                            onClick={() =>
-                              setSelectedOrder(order)
-                            }
-                          >
-                            <Eye size={16} />
-                            View
-                          </button>
+                          <div className="order-action-buttons">
+                            <button
+                              className="view-button"
+                              onClick={() =>
+                                setSelectedOrder(order)
+                              }
+                            >
+                              <Eye size={16} />
+                              View
+                            </button>
+
+                            {order.orderStatus !==
+                              "Completed" &&
+                              order.orderStatus !==
+                              "Rejected" && (
+                                <button
+                                  className="complete-button"
+                                  onClick={() =>
+                                    completeOrder(
+                                      order.id
+                                    )
+                                  }
+                                >
+                                  <Check size={16} />
+                                  Complete
+                                </button>
+                              )}
+
+                            <button
+                              className="delete-order-button"
+                              onClick={() =>
+                                deleteOrder(order.id)
+                              }
+                            >
+                              <Trash2 size={16} />
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -806,6 +903,8 @@ function MainApp() {
             )}
           </div>
         </main>
+
+        {/* ORDER DETAILS MODAL */}
 
         {selectedOrder && (
           <div
@@ -844,7 +943,6 @@ function MainApp() {
               <div className="order-detail-grid">
                 <div>
                   <span>Customer</span>
-
                   <strong>
                     {selectedOrder.customer.name}
                   </strong>
@@ -852,7 +950,6 @@ function MainApp() {
 
                 <div>
                   <span>Phone</span>
-
                   <strong>
                     {selectedOrder.customer.phone}
                   </strong>
@@ -860,7 +957,6 @@ function MainApp() {
 
                 <div>
                   <span>Department</span>
-
                   <strong>
                     {
                       selectedOrder.customer
@@ -871,7 +967,6 @@ function MainApp() {
 
                 <div>
                   <span>Year</span>
-
                   <strong>
                     {selectedOrder.customer.year}
                   </strong>
@@ -879,7 +974,6 @@ function MainApp() {
 
                 <div>
                   <span>Pickup Slot</span>
-
                   <strong>
                     {selectedOrder.customer.slot}
                   </strong>
@@ -888,9 +982,11 @@ function MainApp() {
                 {selectedOrder.customer.email && (
                   <div>
                     <span>Email</span>
-
                     <strong>
-                      {selectedOrder.customer.email}
+                      {
+                        selectedOrder.customer
+                          .email
+                      }
                     </strong>
                   </div>
                 )}
@@ -908,7 +1004,6 @@ function MainApp() {
                       <span>
                         {item.emoji}{" "}
                         {item.name}
-
                         <small>
                           {" "}
                           × {item.quantity}
@@ -1002,6 +1097,35 @@ function MainApp() {
                   <XCircle size={18} />
                   Reject
                 </button>
+
+                {selectedOrder.orderStatus !==
+                  "Completed" &&
+                  selectedOrder.orderStatus !==
+                  "Rejected" && (
+                    <button
+                      className="complete-button"
+                      onClick={() =>
+                        completeOrder(
+                          selectedOrder.id
+                        )
+                      }
+                    >
+                      <Check size={18} />
+                      Complete Order
+                    </button>
+                  )}
+
+                <button
+                  className="delete-order-button"
+                  onClick={() =>
+                    deleteOrder(
+                      selectedOrder.id
+                    )
+                  }
+                >
+                  <Trash2 size={18} />
+                  Delete Order
+                </button>
               </div>
             </div>
           </div>
@@ -1072,7 +1196,6 @@ function MainApp() {
                     ? "admin"
                     : "adminLogin"
                 );
-
                 setMenuOpen(false);
               }}
             >
@@ -1105,7 +1228,7 @@ function MainApp() {
         </div>
       </header>
 
-      {/* HOME */}
+      {/* ================= HOME ================= */}
 
       {page === "home" && (
         <main>
@@ -1221,7 +1344,7 @@ function MainApp() {
         </main>
       )}
 
-      {/* MENU */}
+      {/* ================= MENU ================= */}
 
       {page === "menu" && (
         <main className="page-container">
@@ -1246,7 +1369,7 @@ function MainApp() {
         </main>
       )}
 
-      {/* CART */}
+      {/* ================= CART ================= */}
 
       {page === "cart" && (
         <main className="page-container">
@@ -1353,7 +1476,6 @@ function MainApp() {
 
                 <div className="summary-row">
                   <span>Subtotal</span>
-
                   <span>
                     ₹{totalPrice}
                   </span>
@@ -1383,7 +1505,7 @@ function MainApp() {
         </main>
       )}
 
-      {/* BOOKING */}
+      {/* ================= BOOKING ================= */}
 
       {page === "booking" && (
         <main className="page-container">
@@ -1500,8 +1622,7 @@ function MainApp() {
 
               <div className="input-group">
                 <label>
-                  Pickup Slot{" "}
-                  <span>*</span>
+                  Pickup Slot <span>*</span>
                 </label>
 
                 <div className="slot-grid">
@@ -1510,8 +1631,7 @@ function MainApp() {
                       type="button"
                       key={slot}
                       className={
-                        formData.slot ===
-                        slot
+                        formData.slot === slot
                           ? "slot active"
                           : "slot"
                       }
@@ -1556,9 +1676,7 @@ function MainApp() {
                     return;
                   }
 
-                  if (
-                    !formData.name.trim()
-                  ) {
+                  if (!formData.name.trim()) {
                     alert(
                       "Please enter your name."
                     );
@@ -1642,7 +1760,7 @@ function MainApp() {
         </main>
       )}
 
-      {/* PAYMENT */}
+      {/* ================= PAYMENT ================= */}
 
       {page === "payment" && (
         <main className="page-container">
@@ -1669,7 +1787,7 @@ function MainApp() {
                 </div>
               </div>
 
-              {/* CLICKABLE QR */}
+              {/* QR CODE */}
 
               <div className="qr-container">
                 <button
@@ -1721,17 +1839,15 @@ function MainApp() {
                 </strong>
               </div>
 
-              {/* CORRECT UPI PAYMENT BUTTON */}
+              {/* UPI INTENT */}
 
               <a
                 className="upi-button"
                 href={`upi://pay?pa=${encodeURIComponent(
-UPI_ID
-                )}& pn=${
-  encodeURIComponent(
-    UPI_NAME
-  )
-}& am=${ totalPrice }& cu=INR`}
+                  UPI_ID
+                )}&pn=${encodeURIComponent(
+                  UPI_NAME
+                )}&am=${totalPrice}&cu=INR`}
               >
                 💳 Open UPI App & Pay ₹
                 {totalPrice}
@@ -1749,6 +1865,8 @@ UPI_ID
                 <strong>{UPI_ID}</strong>
               </p>
             </div>
+
+            {/* SCREENSHOT */}
 
             <div className="payment-card card">
               <h3>
@@ -1788,10 +1906,7 @@ UPI_ID
                       onClick={(e) => {
                         e.preventDefault();
 
-                        setPaymentPreview(
-                          ""
-                        );
-
+                        setPaymentPreview("");
                         setPaymentScreenshot(
                           null
                         );
@@ -1813,9 +1928,7 @@ UPI_ID
 
               <button
                 className="primary-button full"
-                onClick={
-                  confirmBooking
-                }
+                onClick={confirmBooking}
               >
                 <CheckCircle size={19} />
                 Confirm Booking
@@ -1825,7 +1938,7 @@ UPI_ID
         </main>
       )}
 
-      {/* SUCCESS */}
+      {/* ================= SUCCESS ================= */}
 
       {page === "success" && (
         <main className="success-page">
@@ -1886,6 +1999,8 @@ UPI_ID
     </div>
   );
 }
+
+// ================= FOOD CARD =================
 
 function FoodCard({ item, onAdd }) {
   const isSpecialOffer = item.id === 2;
@@ -1956,6 +2071,8 @@ function FoodCard({ item, onAdd }) {
   );
 }
 
+// ================= PAGE HEADER =================
+
 function PageHeader({
   title,
   eyebrow,
@@ -1983,16 +2100,29 @@ function PageHeader({
   );
 }
 
+// ================= STATUS BADGE =================
+
 function StatusBadge({ status }) {
-  const className =
+  let className = "status pending";
+
+  if (
     status === "Approved" ||
     status === "Confirmed"
-      ? "status approved"
-      : status === "Rejected"
-        ? "status rejected"
-        : status === "New"
-          ? "status new"
-          : "status pending";
+  ) {
+    className = "status approved";
+  }
+
+  if (status === "Completed") {
+    className = "status completed";
+  }
+
+  if (status === "Rejected") {
+    className = "status rejected";
+  }
+
+  if (status === "New") {
+    className = "status new";
+  }
 
   return (
     <span className={className}>
@@ -2002,4 +2132,3 @@ function StatusBadge({ status }) {
 }
 
 export default App;
-```

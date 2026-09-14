@@ -101,26 +101,3 @@ img {
   background: #fecaca;
   transform: translateY(-1px);
 }
-
-function StatusBadge({
-  status
-
-}) {
-  const className=status==="Approved" || status==="Confirmed" || status==="Completed"
-  ? "status approved"
-  : status==="Rejected"
-    ? "status rejected"
-    : status==="New"
-    ? "status new"
-    : "status pending";
-
-  return (<span className= {
-      className
-    }
-
-    > {
-      status
-    }
-
-    </span>);
-}
